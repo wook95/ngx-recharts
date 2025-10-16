@@ -1,8 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { LineChartComponent } from '../../projects/ngx-recharts-lib/src/lib/components/line-chart.component';
-import { BarChartComponent } from '../../projects/ngx-recharts-lib/src/lib/components/bar-chart.component';
-import { ResponsiveContainerComponent } from '../../projects/ngx-recharts-lib/src/lib/components/responsive-container.component';
+import { LineChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/line-chart.component';
+import { BarChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/bar-chart.component';
+import { BarComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/bar.component';
+import { LineComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/line.component';
+import { XAxisComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/x-axis.component';
+import { YAxisComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/y-axis.component';
+import { CartesianGridComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/cartesian-grid.component';
+import { ResponsiveContainerComponent } from '../../projects/ngx-recharts-lib/src/lib/component/responsive-container.component';
 import { ChartData, getDataValue } from '../../projects/ngx-recharts-lib/src/lib/core/types';
 import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/services/chart-layout.service';
 import { TestChartComponent } from './test-chart.component';
@@ -15,6 +20,11 @@ import { TestChartComponent } from './test-chart.component';
     ResponsiveContainerComponent,
     LineChartComponent,
     BarChartComponent,
+    BarComponent,
+    LineComponent,
+    XAxisComponent,
+    YAxisComponent,
+    CartesianGridComponent,
     TestChartComponent,
   ],
   template: `
@@ -22,30 +32,69 @@ import { TestChartComponent } from './test-chart.component';
       <h1>NGX Recharts Demo</h1>
 
       <div class="chart-container">
-        <h2>Line Chart</h2>
+        <h2>Line Chart (Recharts Style)</h2>
         <ngx-line-chart
           [data]="chartData"
-          [dataKey]="'uv'"
           [width]="600"
-          [height]="400"
-          [stroke]="'#8884d8'"
-          [xAxisLabel]="'Pages'"
-          [yAxisLabel]="'Unique Visitors'"
-        >
+          [height]="400">
+          <svg:g ngx-cartesian-grid 
+            [width]="600 - 60 - 30" 
+            [height]="400 - 20 - 40" 
+            strokeDasharray="3 3"></svg:g>
+          <svg:g [attr.transform]="'translate(0,' + (400 - 20 - 40) + ')'">
+            <svg:g ngx-x-axis 
+              [data]="chartData"
+              [axisWidth]="600 - 60 - 30"
+              dataKey="name"></svg:g>
+          </svg:g>
+          <svg:g ngx-y-axis 
+            [data]="chartData"
+            [axisHeight]="400 - 20 - 40"
+            dataKey="uv"></svg:g>
+          <svg:g ngx-line 
+            [data]="chartData"
+            [chartWidth]="600 - 60 - 30"
+            [chartHeight]="400 - 20 - 40"
+            [margin]="{top: 0, right: 0, bottom: 0, left: 0}"
+            dataKey="uv" 
+            stroke="#8884d8"></svg:g>
         </ngx-line-chart>
       </div>
 
       <div class="chart-container">
-        <h2>Bar Chart</h2>
+        <h2>Bar Chart (Recharts Style)</h2>
         <ngx-bar-chart
           [data]="chartData"
-          [dataKey]="'uv'"
           [width]="600"
-          [height]="400"
-          [fill]="'#82ca9d'"
-          [xAxisLabel]="'Pages'"
-          [yAxisLabel]="'Unique Visitors'"
-        >
+          [height]="400">
+          <svg:g ngx-cartesian-grid 
+            [width]="600 - 60 - 30" 
+            [height]="400 - 20 - 40" 
+            strokeDasharray="3 3"></svg:g>
+          <svg:g [attr.transform]="'translate(0,' + (400 - 20 - 40) + ')'">
+            <svg:g ngx-x-axis 
+              [data]="chartData"
+              [axisWidth]="600 - 60 - 30"
+              dataKey="name"></svg:g>
+          </svg:g>
+          <svg:g ngx-y-axis 
+            [data]="chartData"
+            [axisHeight]="400 - 20 - 40"
+            dataKey="uv"></svg:g>
+          <svg:g ngx-bar 
+            [data]="chartData"
+            [chartWidth]="600 - 60 - 30"
+            [chartHeight]="400 - 20 - 40"
+            [margin]="{top: 0, right: 0, bottom: 0, left: 0}"
+            dataKey="uv" 
+            fill="#8884d8"></svg:g>
+          <svg:g ngx-bar 
+            [data]="chartData"
+            [chartWidth]="600 - 60 - 30"
+            [chartHeight]="400 - 20 - 40"
+            [margin]="{top: 0, right: 0, bottom: 0, left: 0}"
+            dataKey="pv" 
+            fill="#82ca9d"></svg:g>
         </ngx-bar-chart>
       </div>
 

@@ -22,29 +22,30 @@ export interface LinePoint {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (!hide() && points().length > 0) {
-    <!-- Line path -->
-    <svg:path
-      class="recharts-line-curve"
-      [attr.d]="linePath()"
-      [attr.stroke]="stroke()"
-      [attr.stroke-width]="strokeWidth()"
-      [attr.fill]="fill()"
-      stroke-linejoin="round"
-      stroke-linecap="round"
-    />
-
-    <!-- Dots -->
-    @if (dot()) { @for (point of points(); track $index) {
-    <svg:circle
-      class="recharts-line-dot"
-      [attr.cx]="point.x"
-      [attr.cy]="point.y"
-      [attr.r]="dotSize()"
-      [attr.fill]="stroke()"
-      [attr.stroke]="'#fff'"
-      [attr.stroke-width]="1"
-    />
-    } } }
+      <!-- Line path -->
+      <svg:path
+        class="recharts-line-curve"
+        [attr.d]="linePath()"
+        [attr.stroke]="stroke()"
+        [attr.stroke-width]="strokeWidth()"
+        [attr.fill]="fill()"
+        stroke-linejoin="round"
+        stroke-linecap="round" />
+      
+      <!-- Dots -->
+      @if (dot()) {
+        @for (point of points(); track $index) {
+          <svg:circle
+            class="recharts-line-dot"
+            [attr.cx]="point.x"
+            [attr.cy]="point.y"
+            [attr.r]="dotSize()"
+            [attr.fill]="stroke()"
+            [attr.stroke]="'#fff'"
+            [attr.stroke-width]="1" />
+        }
+      }
+    }
   `,
 })
 export class LineComponent {
@@ -98,9 +99,15 @@ export class LineComponent {
     // Create scales using D3
     const xDomain = this.scaleService.getCategoryDomain(data, 'name');
     const yDomain = this.scaleService.getLinearDomain(data, dataKey);
-    
-    const xScale = this.scaleService.createBandScale(xDomain, [0, plotArea.width]);
-    const yScale = this.scaleService.createLinearScale(yDomain, [plotArea.height, 0]);
+
+    const xScale = this.scaleService.createBandScale(xDomain, [
+      0,
+      plotArea.width,
+    ]);
+    const yScale = this.scaleService.createLinearScale(yDomain, [
+      plotArea.height,
+      0,
+    ]);
 
     return data.map((item, index) => {
       const value = getNumericDataValue(item, dataKey);
