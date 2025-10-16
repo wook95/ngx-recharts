@@ -4,6 +4,13 @@ export interface ChartData {
   [key: string]: any;
 }
 
+export interface ChartMargin {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
 export interface ChartOffset {
   readonly top: number;
   readonly bottom: number;

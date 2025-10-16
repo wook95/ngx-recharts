@@ -1,21 +1,24 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { bootstrapApplication } from '@angular/platform-browser';
-import { SurfaceComponent } from '../../projects/ngx-recharts-lib/src/lib/components/surface.component';
+import { ResponsiveContainerComponent } from '../../projects/ngx-recharts-lib/src/lib/components/responsive-container.component';
+import { LineChartComponent } from '../../projects/ngx-recharts-lib/src/lib/components/line-chart.component';
 import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/services/chart-layout.service';
+import { ChartData } from '../../projects/ngx-recharts-lib/src/lib/core/types';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, SurfaceComponent],
+  imports: [CommonModule, ResponsiveContainerComponent, LineChartComponent],
   template: `
     <div class="container">
       <h1>NGX Recharts Demo</h1>
       
       <div class="chart-container">
-        <ngx-recharts-surface [width]="400" [height]="300">
-          <!-- SVG content will go here -->
-        </ngx-recharts-surface>
+        <ngx-responsive-container>
+          <ngx-line-chart [data]="chartData" [width]="600" [height]="300">
+            <!-- Chart elements will go here -->
+          </ngx-line-chart>
+        </ngx-responsive-container>
       </div>
       
       <div class="info">
@@ -60,4 +63,13 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
 })
 export class AppComponent {
   layoutService = inject(ChartLayoutService);
+  
+  chartData: ChartData[] = [
+    { name: 'Page A', uv: 400, pv: 2400, amt: 2400 },
+    { name: 'Page B', uv: 300, pv: 4567, amt: 2400 },
+    { name: 'Page C', uv: 300, pv: 1398, amt: 2400 },
+    { name: 'Page D', uv: 200, pv: 9800, amt: 2400 },
+    { name: 'Page E', uv: 278, pv: 3908, amt: 2400 },
+    { name: 'Page F', uv: 189, pv: 4800, amt: 2400 }
+  ];
 }

@@ -13,3 +13,6 @@ export * from './lib/services/chart-layout.service';
 
 // Components
 export * from './lib/components/surface.component';
+export * from './lib/components/responsive-container.component';
+export * from './lib/components/chart-container.component';
+export * from './lib/components/line-chart.component';

@@ -78,3 +78,9 @@ export const {
   selectMargin,
   selectPlotArea
 } = chartFeature;
+
+export const chartActions = {
+  setData: setChartData,
+  setDimensions: setChartDimensions,
+  setOffset: setChartOffset
+};
