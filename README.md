@@ -1,59 +1,97 @@
-# NgxRecharts
+# NGX Recharts
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.18.
+Angular port of the [Recharts](https://recharts.org/) library. Build composable charts with Angular components using the same API as Recharts.
 
-## Development server
-
-To start a local development server, run:
+## Installation
 
 ```bash
-ng serve
+npm install ngx-recharts
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Quick Start
 
-## Code scaffolding
+```typescript
+import { BarChartComponent, BarComponent, XAxisComponent, YAxisComponent, CartesianGridComponent } from "ngx-recharts";
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+@Component({
+  imports: [BarChartComponent, BarComponent, XAxisComponent, YAxisComponent, CartesianGridComponent],
+  template: `
+    <ngx-bar-chart [data]="data" [width]="600" [height]="400">
+      <svg:g ngx-cartesian-grid strokeDasharray="3 3"></svg:g>
+      <svg:g ngx-x-axis dataKey="name"></svg:g>
+      <svg:g ngx-y-axis></svg:g>
+      <svg:g ngx-bar dataKey="value" fill="#8884d8"></svg:g>
+    </ngx-bar-chart>
+  `,
+})
+export class MyComponent {
+  data = [
+    { name: "Page A", value: 4000 },
+    { name: "Page B", value: 3000 },
+    { name: "Page C", value: 2000 },
+  ];
+}
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Supported Charts
 
-```bash
-ng generate --help
+### Line Chart
+
+```html
+<ngx-line-chart [data]="data" [width]="600" [height]="400">
+  <svg:g ngx-cartesian-grid></svg:g>
+  <svg:g ngx-x-axis dataKey="name"></svg:g>
+  <svg:g ngx-y-axis></svg:g>
+  <svg:g ngx-line dataKey="value" stroke="#8884d8"></svg:g>
+</ngx-line-chart>
 ```
 
-## Building
+### Bar Chart
 
-To build the project run:
-
-```bash
-ng build
+```html
+<ngx-bar-chart [data]="data" [width]="600" [height]="400">
+  <svg:g ngx-cartesian-grid></svg:g>
+  <svg:g ngx-x-axis dataKey="name"></svg:g>
+  <svg:g ngx-y-axis></svg:g>
+  <svg:g ngx-bar dataKey="uv" fill="#8884d8"></svg:g>
+  <svg:g ngx-bar dataKey="pv" fill="#82ca9d"></svg:g>
+</ngx-bar-chart>
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Area Chart with Gradients
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
+```html
+<ngx-area-chart [data]="data" [width]="600" [height]="400">
+  <svg:defs>
+    <svg:linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+      <svg:stop offset="5%" stop-color="#8884d8" stop-opacity="0.8"></svg:stop>
+      <svg:stop offset="95%" stop-color="#8884d8" stop-opacity="0"></svg:stop>
+    </svg:linearGradient>
+  </svg:defs>
+  <svg:g ngx-x-axis dataKey="name"></svg:g>
+  <svg:g ngx-y-axis></svg:g>
+  <svg:g ngx-area dataKey="uv" type="monotone" stroke="#8884d8" fill="url(#colorUv)"></svg:g>
+</ngx-area-chart>
 ```
 
-## Running end-to-end tests
+## Architecture
 
-For end-to-end (e2e) testing, run:
+- **Chart Components**: `LineChart`, `BarChart`, `AreaChart`
+- **Cartesian Components**: `Line`, `Bar`, `Area`, `XAxis`, `YAxis`, `CartesianGrid`
+- **Interactive Components**: `Tooltip`, `ResponsiveContainer`
+- **Services**: `ScaleService` (D3 scales), `TooltipService` (tooltip state)
 
-```bash
-ng e2e
-```
+## Development Status
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+- ✅ Line, Bar, Area Charts
+- ✅ D3 Scale Integration
+- ✅ Interactive Tooltips
+- ✅ SVG Gradients
+- ✅ Curve Interpolation
+- 🔄 Pie Charts (coming soon)
+- 🔄 Legend System (coming soon)
+- 🔄 Animation System (coming soon)
 
-## Additional Resources
+## License
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+MIT
