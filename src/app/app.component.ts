@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { LineChartComponent } from '../../projects/ngx-recharts-lib/src/lib/components/line-chart.component';
+import { BarChartComponent } from '../../projects/ngx-recharts-lib/src/lib/components/bar-chart.component';
 import { ResponsiveContainerComponent } from '../../projects/ngx-recharts-lib/src/lib/components/responsive-container.component';
 import { ChartData, getDataValue } from '../../projects/ngx-recharts-lib/src/lib/core/types';
 import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/services/chart-layout.service';
@@ -13,6 +14,7 @@ import { TestChartComponent } from './test-chart.component';
     CommonModule,
     ResponsiveContainerComponent,
     LineChartComponent,
+    BarChartComponent,
     TestChartComponent,
   ],
   template: `
@@ -20,6 +22,7 @@ import { TestChartComponent } from './test-chart.component';
       <h1>NGX Recharts Demo</h1>
 
       <div class="chart-container">
+        <h2>Line Chart</h2>
         <ngx-line-chart
           [data]="chartData"
           [dataKey]="'uv'"
@@ -30,6 +33,20 @@ import { TestChartComponent } from './test-chart.component';
           [yAxisLabel]="'Unique Visitors'"
         >
         </ngx-line-chart>
+      </div>
+
+      <div class="chart-container">
+        <h2>Bar Chart</h2>
+        <ngx-bar-chart
+          [data]="chartData"
+          [dataKey]="'uv'"
+          [width]="600"
+          [height]="400"
+          [fill]="'#82ca9d'"
+          [xAxisLabel]="'Pages'"
+          [yAxisLabel]="'Unique Visitors'"
+        >
+        </ngx-bar-chart>
       </div>
 
       <div class="info">
