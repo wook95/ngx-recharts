@@ -1,0 +1,182 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
+import { Store } from '@ngrx/store';
+import { ChartData, getNumericDataValue } from '../core/types';
+import { ScaleService } from '../services/scale.service';
+import { 
+  line as d3Line, 
+  area as d3Area, 
+  curveLinear, 
+  curveMonotoneX, 
+  curveCardinal, 
+  curveBasis, 
+  curveStep, 
+  curveStepBefore, 
+  curveStepAfter 
+} from 'd3-shape';
+
+export interface AreaPoint {
+  x: number;
+  y: number;
+  value: any;
+  payload: ChartData;
+}
+
+@Component({
+  selector: 'svg:g[ngx-area]',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    @if (!hide() && points().length > 0) {
+      <!-- Area path -->
+      <svg:path
+        class="recharts-area-area"
+        [attr.d]="areaPath()"
+        [attr.fill]="fill()"
+        [attr.fill-opacity]="fillOpacity()"
+        [attr.stroke]="stroke()"
+        [attr.stroke-width]="strokeWidth()" />
+      
+      <!-- Line path -->
+      @if (stroke() !== 'none') {
+        <svg:path
+          class="recharts-area-curve"
+          [attr.d]="linePath()"
+          [attr.stroke]="stroke()"
+          [attr.stroke-width]="strokeWidth()"
+          [attr.fill]="'none'" />
+      }
+      
+      <!-- Dots -->
+      @if (dot()) {
+        @for (point of points(); track $index) {
+          <svg:circle
+            class="recharts-area-dot"
+            [attr.cx]="point.x"
+            [attr.cy]="point.y"
+            [attr.r]="dotSize()"
+            [attr.fill]="stroke()"
+            [attr.stroke]="'#fff'"
+            [attr.stroke-width]="1" />
+        }
+      }
+    }
+  `
+})
+export class AreaComponent {
+  private store = inject(Store);
+  private scaleService = inject(ScaleService);
+  
+  // Inputs
+  dataKey = input.required<string>();
+  data = input<ChartData[]>([]);
+  fill = input<string>('#8884d8');
+  fillOpacity = input<number>(0.6);
+  stroke = input<string>('#8884d8');
+  strokeWidth = input<number>(1);
+  dot = input<boolean>(false);
+  dotSize = input<number>(3);
+  hide = input<boolean>(false);
+  type = input<'linear' | 'monotone' | 'basis' | 'cardinal' | 'step' | 'stepBefore' | 'stepAfter'>('linear');
+  
+  // Chart dimensions
+  chartWidth = input<number>(400);
+  chartHeight = input<number>(300);
+  
+  // Chart margins
+  margin = input<{top: number, right: number, bottom: number, left: number}>({
+    top: 20, right: 30, bottom: 40, left: 40
+  });
+  
+  // Plot area calculation
+  plotArea = computed(() => {
+    const margin = this.margin();
+    const width = this.chartWidth();
+    const height = this.chartHeight();
+    
+    return {
+      width: width - margin.left - margin.right,
+      height: height - margin.top - margin.bottom,
+      x: margin.left,
+      y: margin.top
+    };
+  });
+  
+  // Computed properties
+  points = computed(() => {
+    const data = this.data();
+    const dataKey = this.dataKey();
+    const plotArea = this.plotArea();
+    
+    if (!data.length || plotArea.width <= 0 || plotArea.height <= 0) return [];
+    
+    // Create scales using D3
+    const xDomain = this.scaleService.getCategoryDomain(data, 'name');
+    const yDomain = this.scaleService.getLinearDomain(data, dataKey);
+    
+    const xScale = this.scaleService.createBandScale(xDomain, [0, plotArea.width]);
+    const yScale = this.scaleService.createLinearScale(yDomain, [plotArea.height, 0]);
+    
+    return data.map((item, index) => {
+      const value = getNumericDataValue(item, dataKey);
+      const categoryValue = String(item['name'] || '');
+      
+      // Use D3 scales for positioning
+      const x = (xScale(categoryValue) || 0) + xScale.bandwidth() / 2;
+      const y = yScale(value);
+      
+      return {
+        x: Number(x.toFixed(1)),
+        y: Number(y.toFixed(1)),
+        value,
+        payload: item
+      };
+    });
+  });
+  
+  // Get curve function based on type
+  private getCurveFunction() {
+    const type = this.type();
+    switch (type) {
+      case 'monotone': return curveMonotoneX;
+      case 'basis': return curveBasis;
+      case 'cardinal': return curveCardinal;
+      case 'step': return curveStep;
+      case 'stepBefore': return curveStepBefore;
+      case 'stepAfter': return curveStepAfter;
+      default: return curveLinear;
+    }
+  }
+  
+  linePath = computed(() => {
+    const points = this.points();
+    if (points.length === 0) return '';
+    
+    const line = d3Line<AreaPoint>()
+      .x(d => d.x)
+      .y(d => d.y)
+      .curve(this.getCurveFunction());
+    
+    return line(points) || '';
+  });
+  
+  areaPath = computed(() => {
+    const points = this.points();
+    const plotArea = this.plotArea();
+    
+    if (points.length === 0) return '';
+    
+    const area = d3Area<AreaPoint>()
+      .x(d => d.x)
+      .y0(plotArea.height)  // baseline at bottom
+      .y1(d => d.y)         // top line follows data
+      .curve(this.getCurveFunction());
+    
+    return area(points) || '';
+  });
+}

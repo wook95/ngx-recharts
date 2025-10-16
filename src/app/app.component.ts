@@ -2,8 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { LineChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/line-chart.component';
 import { BarChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/bar-chart.component';
+import { AreaChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/area-chart.component';
 import { BarComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/bar.component';
 import { LineComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/line.component';
+import { AreaComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/area.component';
 import { XAxisComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/x-axis.component';
 import { YAxisComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/y-axis.component';
 import { CartesianGridComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/cartesian-grid.component';
@@ -20,8 +22,10 @@ import { TestChartComponent } from './test-chart.component';
     ResponsiveContainerComponent,
     LineChartComponent,
     BarChartComponent,
+    AreaChartComponent,
     BarComponent,
     LineComponent,
+    AreaComponent,
     XAxisComponent,
     YAxisComponent,
     CartesianGridComponent,
@@ -96,6 +100,63 @@ import { TestChartComponent } from './test-chart.component';
             dataKey="pv" 
             fill="#82ca9d"></svg:g>
         </ngx-bar-chart>
+      </div>
+
+      <div class="chart-container">
+        <h2>Area Chart (Recharts Style with Gradients)</h2>
+        <ngx-area-chart
+          [data]="chartData"
+          [width]="600"
+          [height]="400"
+          [margin]="{top: 10, right: 30, left: 0, bottom: 0}">
+          
+          <!-- SVG Definitions for Gradients -->
+          <svg:defs>
+            <svg:linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+              <svg:stop offset="5%" stop-color="#8884d8" stop-opacity="0.8"></svg:stop>
+              <svg:stop offset="95%" stop-color="#8884d8" stop-opacity="0"></svg:stop>
+            </svg:linearGradient>
+            <svg:linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
+              <svg:stop offset="5%" stop-color="#82ca9d" stop-opacity="0.8"></svg:stop>
+              <svg:stop offset="95%" stop-color="#82ca9d" stop-opacity="0"></svg:stop>
+            </svg:linearGradient>
+          </svg:defs>
+          
+          <svg:g ngx-x-axis 
+            [data]="chartData"
+            [axisWidth]="600 - 30"
+            dataKey="name"></svg:g>
+          <svg:g ngx-y-axis 
+            [data]="chartData"
+            [axisHeight]="400 - 10"
+            dataKey="uv"></svg:g>
+          <svg:g ngx-cartesian-grid 
+            [width]="600 - 30" 
+            [height]="400 - 10" 
+            strokeDasharray="3 3"></svg:g>
+          
+          <!-- Multiple Area components -->
+          <svg:g ngx-area 
+            [data]="chartData"
+            [chartWidth]="600 - 30"
+            [chartHeight]="400 - 10"
+            [margin]="{top: 0, right: 0, bottom: 0, left: 0}"
+            dataKey="uv" 
+            type="monotone"
+            stroke="#8884d8"
+            fill="url(#colorUv)"
+            [fillOpacity]="1"></svg:g>
+          <svg:g ngx-area 
+            [data]="chartData"
+            [chartWidth]="600 - 30"
+            [chartHeight]="400 - 10"
+            [margin]="{top: 0, right: 0, bottom: 0, left: 0}"
+            dataKey="pv" 
+            type="monotone"
+            stroke="#82ca9d"
+            fill="url(#colorPv)"
+            [fillOpacity]="1"></svg:g>
+        </ngx-area-chart>
       </div>
 
       <div class="info">
