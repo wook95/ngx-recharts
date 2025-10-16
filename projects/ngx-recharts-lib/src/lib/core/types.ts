@@ -4,6 +4,22 @@ export interface ChartData {
   [key: string]: any;
 }
 
+// More specific interface for common chart data patterns
+export interface TypedChartData<T = Record<string, number | string>> extends ChartData {
+  name?: string;
+}
+
+// Utility function to safely access chart data properties
+export function getDataValue(item: ChartData, key: string): any {
+  return (item as Record<string, any>)[key];
+}
+
+// Type-safe data value getter with default
+export function getNumericDataValue(item: ChartData, key: string, defaultValue: number = 0): number {
+  const value = getDataValue(item, key);
+  return typeof value === 'number' && !isNaN(value) ? value : defaultValue;
+}
+
 export interface ChartMargin {
   top: number;
   right: number;

@@ -20,7 +20,21 @@ import { ChartData, ChartMargin } from '../core/types';
       [width]="chartWidth()"
       [height]="chartHeight()"
       class="recharts-wrapper">
-      <ng-content></ng-content>
+      <!-- Debug background -->
+      <svg:rect 
+        [attr.width]="chartWidth()" 
+        [attr.height]="chartHeight()" 
+        fill="#f9f9f9" 
+        stroke="#ddd" />
+      <svg:g [attr.transform]="'translate(' + margin().left + ',' + margin().top + ')'">
+        <!-- Plot area background -->
+        <svg:rect 
+          [attr.width]="plotWidth()" 
+          [attr.height]="plotHeight()" 
+          fill="white" 
+          stroke="#ccc" />
+        <ng-content></ng-content>
+      </svg:g>
     </ngx-recharts-surface>
   `,
   styles: [`
@@ -45,7 +59,15 @@ export class ChartContainerComponent {
   chartWidth = computed(() => this.width());
   chartHeight = computed(() => this.height());
   
-  constructor() {
-    // Layout service will be updated via effects
-  }
+  plotWidth = computed(() => {
+    const m = this.margin();
+    return this.width() - m.left - m.right;
+  });
+  
+  plotHeight = computed(() => {
+    const m = this.margin();
+    return this.height() - m.top - m.bottom;
+  });
+  
+
 }
