@@ -27,12 +27,11 @@ import { ChartData, ChartMargin, getNumericDataValue } from '../core/types';
       <ngx-recharts-surface
         [width]="chartWidth()"
         [height]="chartHeight()">
-        <!-- Debug background -->
+        <!-- Chart background -->
         <svg:rect 
           [attr.width]="chartWidth()" 
           [attr.height]="chartHeight()" 
-          fill="#f9f9f9" 
-          stroke="#ddd" />
+          fill="#fff" />
         <svg:g [attr.transform]="'translate(' + margin().left + ',' + margin().top + ')'">
           <!-- Plot area background -->
           <svg:rect 

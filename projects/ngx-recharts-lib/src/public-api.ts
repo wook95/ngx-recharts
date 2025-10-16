@@ -28,10 +28,18 @@ export * from './lib/cartesian/cartesian-grid.component';
 // Container Components
 export * from './lib/container/surface.component';
 export * from './lib/container/chart-container.component';
+export * from './lib/container/recharts-wrapper.component';
 
 // Component Components
 export * from './lib/component/responsive-container.component';
 export * from './lib/component/tooltip.component';
+export * from './lib/component/legend.component';
+export * from './lib/component/default-legend-content.component';
+export * from './lib/component/cell.component';
+export * from './lib/component/text.component';
+export * from './lib/component/label.component';
+export * from './lib/component/label-list.component';
+export * from './lib/component/customized.component';
 
 // Services
 export * from './lib/services/tooltip.service';

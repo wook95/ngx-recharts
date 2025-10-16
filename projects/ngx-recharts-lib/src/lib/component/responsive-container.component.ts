@@ -14,14 +14,17 @@ import {
 import { Store } from '@ngrx/store';
 import { chartActions } from '../store/chart.state';
 
+export type Percent = string;
+
 export interface ResponsiveContainerProps {
-  width?: number | string;
-  height?: number | string;
-  minWidth?: number;
-  minHeight?: number;
+  width?: Percent | number;
+  height?: Percent | number;
+  minWidth?: string | number;
+  minHeight?: string | number;
   maxHeight?: number;
   aspect?: number;
   debounce?: number;
+  initialDimension?: { width: number; height: number };
 }
 
 @Component({
@@ -34,8 +37,8 @@ export interface ResponsiveContainerProps {
       class="recharts-responsive-container"
       [style.width]="containerWidth()"
       [style.height]="containerHeight()"
-      [style.min-width.px]="minWidth()"
-      [style.min-height.px]="minHeight()"
+      [style.min-width]="getMinWidth()"
+      [style.min-height]="getMinHeight()"
       [style.max-height.px]="maxHeight()">
       <ng-content></ng-content>
     </div>
@@ -53,13 +56,14 @@ export class ResponsiveContainerComponent implements OnDestroy {
   private resizeObserver?: ResizeObserver;
   
   // Inputs
-  width = input<number | string>('100%');
-  height = input<number | string>('100%');
-  minWidth = input<number>(0);
-  minHeight = input<number>(0);
+  width = input<Percent | number>('100%');
+  height = input<Percent | number>('100%');
+  minWidth = input<string | number>(0);
+  minHeight = input<string | number>();
   maxHeight = input<number>();
   aspect = input<number>();
   debounce = input<number>(0);
+  initialDimension = input<{ width: number; height: number }>({ width: -1, height: -1 });
   
   // Outputs
   onResize = output<{ width: number; height: number }>();
@@ -68,7 +72,7 @@ export class ResponsiveContainerComponent implements OnDestroy {
   containerRef = viewChild.required<ElementRef<HTMLDivElement>>('containerRef');
   
   // Signals
-  private containerSize = signal({ width: 0, height: 0 });
+  private containerSize = signal(this.initialDimension());
   
   // Computed properties
   containerWidth = computed(() => {
@@ -85,6 +89,16 @@ export class ResponsiveContainerComponent implements OnDestroy {
     }
     
     return typeof h === 'number' ? `${h}px` : h;
+  });
+  
+  getMinWidth = computed(() => {
+    const minW = this.minWidth();
+    return typeof minW === 'number' ? `${minW}px` : minW;
+  });
+  
+  getMinHeight = computed(() => {
+    const minH = this.minHeight();
+    return typeof minH === 'number' ? `${minH}px` : minH;
   });
   
   constructor() {
@@ -137,8 +151,8 @@ export class ResponsiveContainerComponent implements OnDestroy {
   }
   
   private updateSize(width: number, height: number): void {
-    const minW = this.minWidth();
-    const minH = this.minHeight();
+    const minW = typeof this.minWidth() === 'number' ? this.minWidth() as number : 0;
+    const minH = typeof this.minHeight() === 'number' ? this.minHeight() as number : 0;
     const maxH = this.maxHeight();
     
     const finalWidth = Math.max(width, minW);
@@ -148,9 +162,15 @@ export class ResponsiveContainerComponent implements OnDestroy {
       finalHeight = maxH;
     }
     
+    // Apply aspect ratio if specified
+    const aspect = this.aspect();
+    if (aspect) {
+      finalHeight = finalWidth / aspect;
+    }
+    
     this.containerSize.set({
-      width: finalWidth,
-      height: finalHeight
+      width: Math.round(finalWidth),
+      height: Math.round(finalHeight)
     });
   }
   

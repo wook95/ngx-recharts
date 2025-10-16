@@ -13,6 +13,9 @@ import { setChartDimensions } from '../store/chart.state';
       [attr.width]="width()" 
       [attr.height]="height()"
       [attr.viewBox]="viewBox()"
+      [style.width]="'100%'"
+      [style.height]="'100%'"
+      [style.display]="'block'"
       class="recharts-surface">
       <ng-content></ng-content>
     </svg>
@@ -20,6 +23,7 @@ import { setChartDimensions } from '../store/chart.state';
   styles: [`
     .recharts-surface {
       overflow: hidden;
+      display: block;
     }
   `]
 })

@@ -11,6 +11,7 @@ import { LineComponent } from '../cartesian/line.component';
 import { XAxisComponent } from '../cartesian/x-axis.component';
 import { YAxisComponent } from '../cartesian/y-axis.component';
 import { ChartContainerComponent } from '../container/chart-container.component';
+import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
 import { ChartData, ChartMargin } from '../core/types';
 
 @Component({
@@ -18,17 +19,22 @@ import { ChartData, ChartMargin } from '../core/types';
   standalone: true,
   imports: [
     ChartContainerComponent,
+    RechartsWrapperComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ngx-chart-container
-      [data]="data()"
+    <ngx-recharts-wrapper
       [width]="width()"
-      [height]="height()"
-      [margin]="margin()">
-      
-      <ng-content></ng-content>
-    </ngx-chart-container>
+      [height]="height()">
+      <ngx-chart-container
+        [data]="data()"
+        [width]="width()"
+        [height]="height()"
+        [margin]="margin()">
+        
+        <ng-content></ng-content>
+      </ngx-chart-container>
+    </ngx-recharts-wrapper>
   `,
 })
 export class LineChartComponent {

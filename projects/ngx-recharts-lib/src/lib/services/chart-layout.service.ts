@@ -13,6 +13,11 @@ export class ChartLayoutService {
   readonly height = signal(0);
   readonly offset = signal({ top: 0, bottom: 0, left: 0, right: 0 });
   
+  // Computed properties for compatibility
+  readonly chartWidth = computed(() => this.width());
+  readonly chartHeight = computed(() => this.height());
+  readonly margin = computed(() => this.offset());
+  
   // Computed plot area
   readonly plotArea = computed(() => {
     const w = this.width();
