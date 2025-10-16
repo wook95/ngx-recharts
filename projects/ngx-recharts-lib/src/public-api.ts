@@ -31,6 +31,10 @@ export * from './lib/container/chart-container.component';
 
 // Component Components
 export * from './lib/component/responsive-container.component';
+export * from './lib/component/tooltip.component';
+
+// Services
+export * from './lib/services/tooltip.service';
 
 // Axis types
 export * from './lib/core/axis-types';
