@@ -1,0 +1,24 @@
+// Recharts Base Styles
+.recharts-surface {
+  overflow: hidden;
+}
+
+.recharts-layer {
+  outline: none;
+}
+
+// Chart Container
+.recharts-wrapper {
+  position: relative;
+  cursor: default;
+  width: 100%;
+  height: 100%;
+}
+
+// Responsive Container
+.recharts-responsive-container {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}

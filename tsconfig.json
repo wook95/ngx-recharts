@@ -14,6 +14,14 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "moduleResolution": "bundler",
+    "paths": {
+      "ngx-recharts-lib": [
+        "./dist/ngx-recharts-lib"
+      ],
+      "recharts": [
+        "./dist/recharts"
+      ]
+    },
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022"

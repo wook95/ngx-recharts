@@ -100,6 +100,72 @@
           }
         }
       }
+    },
+    "recharts": {
+      "projectType": "library",
+      "root": "projects/recharts",
+      "sourceRoot": "projects/recharts/src",
+      "prefix": "recharts",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "project": "projects/recharts/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/recharts/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/recharts/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "tsConfig": "projects/recharts/tsconfig.spec.json",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ]
+          }
+        }
+      }
+    },
+    "ngx-recharts-lib": {
+      "projectType": "library",
+      "root": "projects/ngx-recharts-lib",
+      "sourceRoot": "projects/ngx-recharts-lib/src",
+      "prefix": "ngx-recharts",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "project": "projects/ngx-recharts-lib/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/ngx-recharts-lib/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/ngx-recharts-lib/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "tsConfig": "projects/ngx-recharts-lib/tsconfig.spec.json",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ]
+          }
+        }
+      }
     }
   }
 }
