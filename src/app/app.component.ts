@@ -17,12 +17,13 @@ import {
 } from '../../projects/ngx-recharts-lib/src/lib/component/legend.component';
 import { ResponsiveContainerComponent } from '../../projects/ngx-recharts-lib/src/lib/component/responsive-container.component';
 import { TextComponent } from '../../projects/ngx-recharts-lib/src/lib/component/text.component';
+import { TooltipComponent } from '../../projects/ngx-recharts-lib/src/lib/component/tooltip.component';
+import { TooltipDirective } from '../../projects/ngx-recharts-lib/src/lib/component/tooltip.directive';
 import {
   ChartData,
   getDataValue,
 } from '../../projects/ngx-recharts-lib/src/lib/core/types';
 import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/services/chart-layout.service';
-import { TestChartComponent } from './test-chart.component';
 
 @Component({
   selector: 'app-root',
@@ -43,7 +44,8 @@ import { TestChartComponent } from './test-chart.component';
     TextComponent,
     LabelComponent,
     CellComponent,
-    TestChartComponent,
+    TooltipComponent,
+    TooltipDirective,
   ],
   template: `
     <div class="container">
@@ -53,7 +55,7 @@ import { TestChartComponent } from './test-chart.component';
         <h2>Line Chart - X-axis Top, Y-axis Right</h2>
         <div style="width: 100%; height: 500px;">
           <ngx-responsive-container [width]="'100%'" [height]="'100%'">
-            <ngx-line-chart [data]="chartData">
+            <ngx-line-chart [data]="chartData" [tooltip]="lineTooltipConfig">
               <svg:g
                 ngx-cartesian-grid
                 [horizontal]="true"
@@ -80,6 +82,17 @@ import { TestChartComponent } from './test-chart.component';
                 dataKey="uv"
                 stroke="#8884d8"
               ></svg:g>
+              <svg:g
+                ngx-line
+                [data]="chartData"
+                [activeDot]="{
+                  r: 16,
+                }"
+                dataKey="pv"
+                stroke="#82ca9d"
+              ></svg:g>
+
+              <!-- Tooltip handled internally by chart -->
             </ngx-line-chart>
 
             <!-- Legend positioned as overlay -->
@@ -100,7 +113,7 @@ import { TestChartComponent } from './test-chart.component';
         <h2>Bar Chart - Default Orientation (Bottom/Left)</h2>
         <div style="width: 100%; height: 500px;">
           <ngx-responsive-container [width]="'100%'" [height]="'100%'">
-            <ngx-bar-chart [data]="chartData">
+            <ngx-bar-chart [data]="chartData" [tooltip]="barTooltipConfig">
               <svg:g
                 ngx-cartesian-grid
                 strokeDasharray="5 5"
@@ -108,17 +121,17 @@ import { TestChartComponent } from './test-chart.component';
               ></svg:g>
               <svg:g
                 ngx-x-axis
+                dataKey="name"
                 [data]="chartData"
                 [orientation]="'bottom'"
-                dataKey="name"
                 [label]="'Categories'"
                 [chartType]="'bar'"
               ></svg:g>
               <svg:g
                 ngx-y-axis
+                dataKey="uv"
                 [data]="chartData"
                 [orientation]="'left'"
-                dataKey="uv"
                 [label]="'Values'"
               ></svg:g>
               <svg:g
@@ -133,6 +146,8 @@ import { TestChartComponent } from './test-chart.component';
                 dataKey="pv"
                 fill="#82ca9d"
               ></svg:g>
+
+              <!-- Tooltip handled internally by chart -->
             </ngx-bar-chart>
 
             <!-- Legend positioned as overlay -->
@@ -155,6 +170,7 @@ import { TestChartComponent } from './test-chart.component';
             <ngx-area-chart
               [data]="chartData"
               [margin]="{ top: 10, right: 30, left: 0, bottom: 0 }"
+              [tooltip]="areaTooltipConfig"
             >
               <!-- SVG Definitions for Gradients -->
               <svg:defs>
@@ -224,6 +240,8 @@ import { TestChartComponent } from './test-chart.component';
                 fill="url(#colorPv)"
                 [fillOpacity]="1"
               ></svg:g>
+
+              <!-- Tooltip handled internally by chart -->
             </ngx-area-chart>
 
             <!-- Legend positioned outside chart -->
@@ -383,8 +401,6 @@ import { TestChartComponent } from './test-chart.component';
           <li>📱 All charts are now fully responsive</li>
         </ul>
       </div>
-
-      <app-test-chart></app-test-chart>
     </div>
   `,
   styles: [
@@ -440,6 +456,12 @@ export class AppComponent {
       color: '#8884d8',
       dataKey: 'uv',
     },
+    {
+      value: 'PV Data',
+      type: 'line',
+      color: '#82ca9d',
+      dataKey: 'pv',
+    },
   ];
 
   barChartLegend: LegendPayload[] = [
@@ -487,4 +509,43 @@ export class AppComponent {
   onLegendHover(event: { data: any; index: number; event: MouseEvent }) {
     console.log('Legend hovered:', event.data.value);
   }
+
+  // Tooltip formatters - recharts API
+  tooltipFormatter = (
+    value: any,
+    name: string,
+    props: any
+  ): [string, string] => {
+    return [`${value.toLocaleString()} units`, `${name} (Custom)`];
+  };
+
+  labelFormatter = (label: string, payload: any[]): string => {
+    return `Category: ${label}`;
+  };
+
+  // Tooltip configurations
+  lineTooltipConfig = {
+    separator: ' : ',
+    formatter: this.tooltipFormatter,
+    labelFormatter: this.labelFormatter,
+    animationDuration: 250,
+    snapToDataPoint: true, // Snap to exact data point coordinates
+  };
+
+  barTooltipConfig = {
+    separator: ' = ',
+    contentStyle: { backgroundColor: '#f8f9fa', border: '2px solid #dee2e6' },
+    labelStyle: { fontWeight: 'bold', color: '#495057' },
+    animationDuration: 400,
+    animationEasing: 'ease' as const,
+    snapToDataPoint: false, // Follow mouse Y position
+  };
+
+  areaTooltipConfig = {
+    offset: 10,
+    isAnimationActive: true,
+    animationDuration: 400,
+    animationEasing: 'ease' as const,
+    snapToDataPoint: true, // Snap to area data points
+  };
 }

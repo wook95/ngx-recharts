@@ -18,6 +18,7 @@ import { YAxisComponent } from '../cartesian/y-axis.component';
 import { BarComponent } from '../cartesian/bar.component';
 import { CartesianGridComponent } from '../cartesian/cartesian-grid.component';
 import { ChartData, ChartMargin } from '../core/types';
+import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 
@@ -37,7 +38,9 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
         [data]="data()"
         [width]="actualWidth()"
         [height]="actualHeight()"
-        [margin]="margin()">
+        [margin]="margin()"
+        [chartType]="'bar'"
+        [tooltip]="tooltip()">
         
         <ng-content></ng-content>
       </ngx-chart-container>
@@ -77,6 +80,9 @@ export class BarChartComponent implements AfterContentInit {
   fill = input<string>('#8884d8');
   xAxisLabel = input<string>();
   yAxisLabel = input<string>();
+  
+  // Tooltip configuration
+  tooltip = input<TooltipConfig>({});
   
   // Use responsive dimensions if available, otherwise fall back to props
   actualWidth = computed(() => {

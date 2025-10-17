@@ -10,6 +10,7 @@ import { Store } from '@ngrx/store';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
 import { ChartData, ChartMargin } from '../core/types';
+import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 
@@ -29,7 +30,9 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
         [data]="data()"
         [width]="actualWidth()"
         [height]="actualHeight()"
-        [margin]="margin()">
+        [margin]="margin()"
+        [chartType]="'area'"
+        [tooltip]="tooltip()">
         
         <ng-content></ng-content>
       </ngx-chart-container>
@@ -60,6 +63,9 @@ export class AreaChartComponent {
   width = input<number>(600);
   height = input<number>(400);
   margin = input<ChartMargin>({ top: 10, right: 5, bottom: 5, left: 5 });
+  
+  // Tooltip configuration
+  tooltip = input<TooltipConfig>({});
   
   // Use responsive dimensions if available, otherwise fall back to props
   actualWidth = computed(() => {

@@ -5,19 +5,34 @@ import {
   effect,
   inject,
   input,
+  Injector,
+  SkipSelf,
+  Optional,
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
 import { ChartData, ChartMargin } from '../core/types';
+import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
+import { TooltipService } from '../services/tooltip.service';
+
 
 @Component({
   selector: 'ngx-line-chart',
   standalone: true,
   imports: [ChartContainerComponent, RechartsWrapperComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    TooltipService,
+    {
+      provide: CHART_TOOLTIP_SERVICE,
+      useExisting: TooltipService,
+    },
+  ],
+
   template: `
     <ngx-recharts-wrapper [width]="actualWidth()" [height]="actualHeight()">
       <ngx-chart-container
@@ -25,6 +40,8 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
         [width]="actualWidth()"
         [height]="actualHeight()"
         [margin]="margin()"
+        [chartType]="'line'"
+        [tooltip]="tooltip()"
       >
         <ng-content></ng-content>
       </ngx-chart-container>
@@ -61,6 +78,9 @@ export class LineChartComponent {
   stroke = input<string>('#8884d8');
   xAxisLabel = input<string>();
   yAxisLabel = input<string>();
+  
+  // Tooltip configuration
+  tooltip = input<TooltipConfig>({});
 
   // Use responsive dimensions if available, otherwise fall back to props
   actualWidth = computed(() => {
@@ -83,4 +103,6 @@ export class LineChartComponent {
     const m = this.margin();
     return this.actualHeight() - m.top - m.bottom;
   });
+
+
 }
