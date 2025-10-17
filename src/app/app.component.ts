@@ -54,7 +54,11 @@ import { TestChartComponent } from './test-chart.component';
         <div style="width: 100%; height: 500px;">
           <ngx-responsive-container [width]="'100%'" [height]="'100%'">
             <ngx-line-chart [data]="chartData">
-              <svg:g ngx-cartesian-grid strokeDasharray="3 3"></svg:g>
+              <svg:g
+                ngx-cartesian-grid
+                [horizontal]="true"
+                [vertical]="false"
+              ></svg:g>
               <svg:g
                 ngx-x-axis
                 [data]="chartData"
@@ -84,6 +88,8 @@ import { TestChartComponent } from './test-chart.component';
               [layout]="'horizontal'"
               [align]="'center'"
               [verticalAlign]="'bottom'"
+              (legendClick)="onLegendClick($event)"
+              (legendMouseEnter)="onLegendHover($event)"
             >
             </ngx-legend>
           </ngx-responsive-container>
@@ -95,7 +101,11 @@ import { TestChartComponent } from './test-chart.component';
         <div style="width: 100%; height: 500px;">
           <ngx-responsive-container [width]="'100%'" [height]="'100%'">
             <ngx-bar-chart [data]="chartData">
-              <svg:g ngx-cartesian-grid strokeDasharray="3 3"></svg:g>
+              <svg:g
+                ngx-cartesian-grid
+                strokeDasharray="5 5"
+                stroke="#e0e0e0"
+              ></svg:g>
               <svg:g
                 ngx-x-axis
                 [data]="chartData"
@@ -131,6 +141,7 @@ import { TestChartComponent } from './test-chart.component';
               [layout]="'horizontal'"
               [align]="'center'"
               [verticalAlign]="'bottom'"
+              (legendClick)="onLegendClick($event)"
             >
             </ngx-legend>
           </ngx-responsive-container>
@@ -173,7 +184,11 @@ import { TestChartComponent } from './test-chart.component';
                 </svg:linearGradient>
               </svg:defs>
 
-              <svg:g ngx-cartesian-grid strokeDasharray="3 3"></svg:g>
+              <svg:g
+                ngx-cartesian-grid
+                strokeDasharray="2 2"
+                stroke="#ddd"
+              ></svg:g>
               <svg:g
                 ngx-x-axis
                 [data]="chartData"
@@ -217,6 +232,7 @@ import { TestChartComponent } from './test-chart.component';
               [layout]="'horizontal'"
               [align]="'center'"
               [verticalAlign]="'bottom'"
+              (legendClick)="onLegendClick($event)"
             >
             </ngx-legend>
           </ngx-responsive-container>
@@ -461,5 +477,14 @@ export class AppComponent {
       .slice(0, 3)
       .map((d) => getDataValue(d, 'uv'))
       .join(', ');
+  }
+
+  // Legend event handlers - Angular style
+  onLegendClick(event: { data: any; index: number; event: MouseEvent }) {
+    console.log('Legend clicked:', event.data.value, event.index);
+  }
+
+  onLegendHover(event: { data: any; index: number; event: MouseEvent }) {
+    console.log('Legend hovered:', event.data.value);
   }
 }

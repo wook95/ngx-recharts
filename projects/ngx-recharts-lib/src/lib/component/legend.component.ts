@@ -4,10 +4,12 @@ import {
   computed,
   effect,
   ElementRef,
+  EventEmitter,
   inject,
   input,
   OnDestroy,
   OnInit,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -63,9 +65,9 @@ export type LegendLayout = 'horizontal' | 'vertical';
         [iconSize]="iconSize()"
         [iconType]="iconType()"
         [formatter]="formatter()"
-        [onClick]="onClick()"
-        [onMouseEnter]="onMouseEnter()"
-        [onMouseLeave]="onMouseLeave()"
+        [onClick]="handleClick"
+        [onMouseEnter]="handleMouseEnter"
+        [onMouseLeave]="handleMouseLeave"
       >
       </ngx-default-legend-content>
     </div>
@@ -123,23 +125,23 @@ export class LegendComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Event handlers
-  onClick =
-    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseDown =
-    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseUp =
-    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseMove =
-    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseOver =
-    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseOut =
-    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseEnter =
-    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseLeave =
-    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  // Event outputs - Angular style
+  legendClick = output<{ data: LegendPayload; index: number; event: MouseEvent }>();
+  legendMouseEnter = output<{ data: LegendPayload; index: number; event: MouseEvent }>();
+  legendMouseLeave = output<{ data: LegendPayload; index: number; event: MouseEvent }>();
+  
+  // Internal event handlers for DefaultLegendContent
+  handleClick = (data: LegendPayload, index: number, event: MouseEvent) => {
+    this.legendClick.emit({ data, index, event });
+  };
+  
+  handleMouseEnter = (data: LegendPayload, index: number, event: MouseEvent) => {
+    this.legendMouseEnter.emit({ data, index, event });
+  };
+  
+  handleMouseLeave = (data: LegendPayload, index: number, event: MouseEvent) => {
+    this.legendMouseLeave.emit({ data, index, event });
+  };
 
   // Services
   private chartLayoutService = inject(ChartLayoutService);
