@@ -6,7 +6,8 @@ import {
   ChangeDetectionStrategy,
   ContentChildren,
   QueryList,
-  AfterContentInit
+  AfterContentInit,
+  effect
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { chartActions } from '../store/chart.state';
@@ -17,6 +18,8 @@ import { YAxisComponent } from '../cartesian/y-axis.component';
 import { BarComponent } from '../cartesian/bar.component';
 import { CartesianGridComponent } from '../cartesian/cartesian-grid.component';
 import { ChartData, ChartMargin } from '../core/types';
+import { ChartLayoutService } from '../services/chart-layout.service';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 
 @Component({
   selector: 'ngx-bar-chart',
@@ -28,12 +31,12 @@ import { ChartData, ChartMargin } from '../core/types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ngx-recharts-wrapper
-      [width]="width()"
-      [height]="height()">
+      [width]="actualWidth()"
+      [height]="actualHeight()">
       <ngx-chart-container
         [data]="data()"
-        [width]="width()"
-        [height]="height()"
+        [width]="actualWidth()"
+        [height]="actualHeight()"
         [margin]="margin()">
         
         <ng-content></ng-content>
@@ -43,6 +46,17 @@ import { ChartData, ChartMargin } from '../core/types';
 })
 export class BarChartComponent implements AfterContentInit {
   private store = inject(Store);
+  private chartLayoutService = inject(ChartLayoutService);
+  private responsiveService = inject(ResponsiveContainerService, { optional: true });
+  
+  constructor() {
+    // Effect to update margin in responsive service
+    effect(() => {
+      if (this.responsiveService) {
+        this.responsiveService.setMargin(this.margin());
+      }
+    });
+  }
   
   @ContentChildren(BarComponent) bars!: QueryList<BarComponent>;
   @ContentChildren(XAxisComponent) xAxes!: QueryList<XAxisComponent>;
@@ -59,15 +73,26 @@ export class BarChartComponent implements AfterContentInit {
   xAxisLabel = input<string>();
   yAxisLabel = input<string>();
   
+  // Use responsive dimensions if available, otherwise fall back to props
+  actualWidth = computed(() => {
+    const responsiveWidth = this.responsiveService?.width() ?? 0;
+    return responsiveWidth > 0 ? responsiveWidth : this.width();
+  });
+  
+  actualHeight = computed(() => {
+    const responsiveHeight = this.responsiveService?.height() ?? 0;
+    return responsiveHeight > 0 ? responsiveHeight : this.height();
+  });
+  
   // Computed plot area dimensions
   plotWidth = computed(() => {
     const m = this.margin();
-    return this.width() - m.left - m.right;
+    return this.actualWidth() - m.left - m.right;
   });
   
   plotHeight = computed(() => {
     const m = this.margin();
-    return this.height() - m.top - m.bottom;
+    return this.actualHeight() - m.top - m.bottom;
   });
   
   ngAfterContentInit() {

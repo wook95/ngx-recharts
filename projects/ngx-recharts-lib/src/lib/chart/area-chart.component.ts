@@ -3,12 +3,15 @@ import {
   input,
   computed,
   inject,
-  ChangeDetectionStrategy
+  ChangeDetectionStrategy,
+  effect
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
 import { ChartData, ChartMargin } from '../core/types';
+import { ChartLayoutService } from '../services/chart-layout.service';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 
 @Component({
   selector: 'ngx-area-chart',
@@ -20,12 +23,12 @@ import { ChartData, ChartMargin } from '../core/types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ngx-recharts-wrapper
-      [width]="width()"
-      [height]="height()">
+      [width]="actualWidth()"
+      [height]="actualHeight()">
       <ngx-chart-container
         [data]="data()"
-        [width]="width()"
-        [height]="height()"
+        [width]="actualWidth()"
+        [height]="actualHeight()"
         [margin]="margin()">
         
         <ng-content></ng-content>
@@ -35,6 +38,17 @@ import { ChartData, ChartMargin } from '../core/types';
 })
 export class AreaChartComponent {
   private store = inject(Store);
+  private chartLayoutService = inject(ChartLayoutService);
+  private responsiveService = inject(ResponsiveContainerService, { optional: true });
+  
+  constructor() {
+    // Effect to update margin in responsive service
+    effect(() => {
+      if (this.responsiveService) {
+        this.responsiveService.setMargin(this.margin());
+      }
+    });
+  }
   
   // Inputs
   data = input.required<ChartData[]>();
@@ -42,14 +56,25 @@ export class AreaChartComponent {
   height = input<number>(400);
   margin = input<ChartMargin>({ top: 20, right: 30, bottom: 40, left: 60 });
   
+  // Use responsive dimensions if available, otherwise fall back to props
+  actualWidth = computed(() => {
+    const responsiveWidth = this.responsiveService?.width() ?? 0;
+    return responsiveWidth > 0 ? responsiveWidth : this.width();
+  });
+  
+  actualHeight = computed(() => {
+    const responsiveHeight = this.responsiveService?.height() ?? 0;
+    return responsiveHeight > 0 ? responsiveHeight : this.height();
+  });
+  
   // Computed plot area dimensions
   plotWidth = computed(() => {
     const m = this.margin();
-    return this.width() - m.left - m.right;
+    return this.actualWidth() - m.left - m.right;
   });
   
   plotHeight = computed(() => {
     const m = this.margin();
-    return this.height() - m.top - m.bottom;
+    return this.actualHeight() - m.top - m.bottom;
   });
 }

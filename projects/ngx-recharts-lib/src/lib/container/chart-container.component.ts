@@ -10,6 +10,7 @@ import {
 import { Store } from '@ngrx/store';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { TooltipService } from '../services/tooltip.service';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { SurfaceComponent } from './surface.component';
 import { TooltipComponent } from '../component/tooltip.component';
 import { ChartData, ChartMargin, getNumericDataValue } from '../core/types';
@@ -32,7 +33,7 @@ import { ChartData, ChartMargin, getNumericDataValue } from '../core/types';
           [attr.width]="chartWidth()" 
           [attr.height]="chartHeight()" 
           fill="#fff" />
-        <svg:g [attr.transform]="'translate(' + margin().left + ',' + margin().top + ')'">
+        <svg:g [attr.transform]="chartTransform()">
           <!-- Plot area background -->
           <svg:rect 
             [attr.width]="plotWidth()" 
@@ -64,6 +65,7 @@ export class ChartContainerComponent {
   private layoutService = inject(ChartLayoutService);
   protected tooltipService = inject(TooltipService);
   private elementRef = inject(ElementRef);
+  private responsiveService = inject(ResponsiveContainerService, { optional: true });
   
   // Inputs
   data = input.required<ChartData[]>();
@@ -75,20 +77,47 @@ export class ChartContainerComponent {
   chartWidth = computed(() => this.width());
   chartHeight = computed(() => this.height());
   
+  // Use responsive service plot dimensions if available
   plotWidth = computed(() => {
+    if (this.responsiveService) {
+      return this.responsiveService.plotWidth();
+    }
     const m = this.margin();
     return this.width() - m.left - m.right;
   });
   
   plotHeight = computed(() => {
+    if (this.responsiveService) {
+      return this.responsiveService.plotHeight();
+    }
     const m = this.margin();
     return this.height() - m.top - m.bottom;
   });
   
+  // Chart transform using responsive service offset
+  chartTransform = computed(() => {
+    if (this.responsiveService) {
+      const offset = this.responsiveService.totalOffset();
+      return `translate(${offset.left}, ${offset.top})`;
+    }
+    const m = this.margin();
+    return `translate(${m.left}, ${m.top})`;
+  });
+  
   onMouseMove(event: MouseEvent) {
     const rect = this.elementRef.nativeElement.getBoundingClientRect();
-    const x = event.clientX - rect.left - this.margin().left;
-    const y = event.clientY - rect.top - this.margin().top;
+    // Calculate mouse position relative to plot area
+    let offsetLeft = this.margin().left;
+    let offsetTop = this.margin().top;
+    
+    if (this.responsiveService) {
+      const offset = this.responsiveService.totalOffset();
+      offsetLeft = offset.left;
+      offsetTop = offset.top;
+    }
+    
+    const x = event.clientX - rect.left - offsetLeft;
+    const y = event.clientY - rect.top - offsetTop;
     
     // Check if mouse is within plot area (grid area)
     const plotWidth = this.plotWidth();
@@ -131,7 +160,7 @@ export class ChartContainerComponent {
     // X position snaps to data point, Y follows mouse
     this.tooltipService.showTooltip(
       { 
-        x: exactX + this.margin().left, 
+        x: exactX + offsetLeft, 
         y: event.clientY - rect.top 
       },
       payload,

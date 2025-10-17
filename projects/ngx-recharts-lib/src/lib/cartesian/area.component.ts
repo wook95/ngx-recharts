@@ -8,6 +8,7 @@ import {
 import { Store } from '@ngrx/store';
 import { ChartData, getNumericDataValue } from '../core/types';
 import { ScaleService } from '../services/scale.service';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { 
   line as d3Line, 
   area as d3Area, 
@@ -71,6 +72,7 @@ export interface AreaPoint {
 export class AreaComponent {
   private store = inject(Store);
   private scaleService = inject(ScaleService);
+  private responsiveService = inject(ResponsiveContainerService, { optional: true });
   
   // Inputs
   dataKey = input.required<string>();
@@ -88,16 +90,40 @@ export class AreaComponent {
   chartWidth = input<number>(400);
   chartHeight = input<number>(300);
   
+  // Use responsive dimensions if available
+  actualWidth = computed(() => {
+    const responsiveWidth = this.responsiveService?.width() ?? 0;
+    return responsiveWidth > 0 ? responsiveWidth : this.chartWidth();
+  });
+  
+  actualHeight = computed(() => {
+    const responsiveHeight = this.responsiveService?.height() ?? 0;
+    return responsiveHeight > 0 ? responsiveHeight : this.chartHeight();
+  });
+  
   // Chart margins
   margin = input<{top: number, right: number, bottom: number, left: number}>({
     top: 20, right: 30, bottom: 40, left: 40
   });
   
-  // Plot area calculation
+  // Plot area calculation - use responsive service plot area if available
   plotArea = computed(() => {
+    const plotWidth = this.responsiveService?.plotWidth() ?? 0;
+    const plotHeight = this.responsiveService?.plotHeight() ?? 0;
+    
+    if (plotWidth > 0 && plotHeight > 0) {
+      return {
+        width: plotWidth,
+        height: plotHeight,
+        x: 0,
+        y: 0,
+      };
+    }
+    
+    // Fallback to manual calculation
     const margin = this.margin();
-    const width = this.chartWidth();
-    const height = this.chartHeight();
+    const width = this.actualWidth();
+    const height = this.actualHeight();
     
     return {
       width: width - margin.left - margin.right,

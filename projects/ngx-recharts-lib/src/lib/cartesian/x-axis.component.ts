@@ -1,14 +1,16 @@
 import {
+  ChangeDetectionStrategy,
   Component,
-  input,
   computed,
   inject,
-  ChangeDetectionStrategy
+  input,
+  effect,
 } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { AxisProps, AxisOrientation, AxisType } from '../core/axis-types';
-import { ScaleService } from '../services/scale.service';
+import { AxisOrientation, AxisType } from '../core/axis-types';
 import { ChartData } from '../core/types';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { ScaleService } from '../services/scale.service';
 
 @Component({
   selector: 'svg:g[ngx-x-axis]',
@@ -17,60 +19,94 @@ import { ChartData } from '../core/types';
   template: `
     <svg:g class="recharts-xAxis xAxis" [attr.transform]="axisTransform()">
       @if (!hide()) {
-        <!-- Axis line -->
-        <svg:line 
-          class="recharts-cartesian-axis-line"
+      <!-- Axis line -->
+      <svg:line
+        class="recharts-cartesian-axis-line"
+        [attr.x1]="0"
+        [attr.y1]="0"
+        [attr.x2]="actualWidth()"
+        [attr.y2]="0"
+        stroke="#666"
+        fill="none"
+      />
+
+      <!-- Ticks -->
+      @for (tick of ticks(); track tick.value) {
+      <svg:g
+        class="recharts-cartesian-axis-tick"
+        [attr.transform]="'translate(' + tick.coordinate + ',0)'"
+      >
+        @if (showTick()) {
+        <svg:line
+          class="recharts-cartesian-axis-tick-line"
           [attr.x1]="0"
           [attr.y1]="0"
-          [attr.x2]="axisWidth()"
-          [attr.y2]="0"
+          [attr.x2]="0"
+          [attr.y2]="tickSize()"
           stroke="#666"
-          fill="none" />
-        
-        <!-- Ticks -->
-        @for (tick of ticks(); track tick.value) {
-          <svg:g class="recharts-cartesian-axis-tick" [attr.transform]="'translate(' + tick.coordinate + ',0)'">
-            @if (showTick()) {
-              <svg:line
-                class="recharts-cartesian-axis-tick-line"
-                [attr.x1]="0"
-                [attr.y1]="0"
-                [attr.x2]="0"
-                [attr.y2]="tickSize()"
-                stroke="#666"
-                fill="none" />
-            }
-            <svg:text
-              class="recharts-cartesian-axis-tick-value"
-              [attr.x]="0"
-              [attr.y]="textY()"
-              text-anchor="middle"
-              dominant-baseline="hanging"
-              fill="#666">
-              {{ formatTick(tick.value) }}
-            </svg:text>
-          </svg:g>
+          fill="none"
+        />
         }
-        
-        <!-- Label -->
-        @if (label()) {
-          <svg:text
-            class="recharts-label"
-            [attr.x]="axisWidth() / 2"
-            [attr.y]="labelY()"
-            text-anchor="middle"
-            fill="#666">
-            {{ label() }}
-          </svg:text>
-        }
+        <svg:text
+          class="recharts-cartesian-axis-tick-value"
+          [attr.x]="0"
+          [attr.y]="textY()"
+          text-anchor="middle"
+          dominant-baseline="hanging"
+          fill="#666"
+        >
+          {{ formatTick(tick.value) }}
+        </svg:text>
+      </svg:g>
       }
+
+      <!-- Label -->
+      @if (label()) {
+      <svg:text
+        class="recharts-label"
+        [attr.x]="actualWidth() / 2"
+        [attr.y]="labelY()"
+        text-anchor="middle"
+        fill="#666"
+      >
+        {{ label() }}
+      </svg:text>
+      } }
     </svg:g>
-  `
+  `,
 })
 export class XAxisComponent {
   private store = inject(Store);
   private scaleService = inject(ScaleService);
+  private responsiveService = inject(ResponsiveContainerService, {
+    optional: true,
+  });
   
+  constructor() {
+    // Update axis offset when orientation or label changes
+    effect(() => {
+      if (this.responsiveService && !this.hide()) {
+        const orientation = this.orientation();
+        const hasLabel = !!this.label();
+        
+        // Calculate axis height: tick size + tick margin + text height + label space
+        const tickSize = 6;
+        const tickMargin = this.tickMargin();
+        const textHeight = 14;
+        const labelHeight = hasLabel ? 20 : 0;
+        const padding = 5;
+        
+        const axisHeight = tickSize + tickMargin + textHeight + labelHeight + padding;
+        
+        if (orientation === 'top') {
+          this.responsiveService.setAxisOffset({ top: axisHeight });
+        } else {
+          this.responsiveService.setAxisOffset({ bottom: axisHeight });
+        }
+      }
+    });
+  }
+
   // Inputs
   type = input<AxisType>('category');
   dataKey = input<string>('name');
@@ -82,26 +118,63 @@ export class XAxisComponent {
   unit = input<string>();
   hide = input<boolean>(false);
   data = input<ChartData[]>([]);
-  
+  tickMargin = input<number>(8); // Increased from recharts default of 2
+
   // Internal properties
   axisWidth = input<number>(400);
   axisHeight = input<number>(30);
-  
+
+  // Use plot area width from responsive service
+  actualWidth = computed(() => {
+    const plotWidth = this.responsiveService?.plotWidth() ?? 0;
+    return plotWidth > 0 ? plotWidth : this.axisWidth();
+  });
+
   // Computed properties
   showTick = computed(() => this.tick());
-  tickSize = computed(() => this.orientation() === 'top' ? -6 : 6);
-  textY = computed(() => this.orientation() === 'top' ? -9 : 15);
-  labelY = computed(() => this.orientation() === 'top' ? -25 : 35);
-  
-  axisTransform = computed(() => 'translate(0, 0)');
-  
+  tickSize = computed(() => (this.orientation() === 'top' ? -6 : 6));
+  textY = computed(() => {
+    const orientation = this.orientation();
+    const tickSize = Math.abs(this.tickSize());
+    const margin = this.tickMargin();
+    // tickMargin is the distance from tick line end to text
+    return orientation === 'top' ? -(tickSize + margin) : (tickSize + margin);
+  });
+  labelY = computed(() => {
+    const orientation = this.orientation();
+    // Label should be positioned further away from tick text
+    // Estimate text height as ~14px and add extra margin
+    const textHeight = 14;
+    const labelMargin = 10;
+    const tickSize = Math.abs(this.tickSize());
+    const tickMargin = this.tickMargin();
+    
+    if (orientation === 'top') {
+      return -(tickSize + tickMargin + textHeight + labelMargin);
+    } else {
+      return tickSize + tickMargin + textHeight + labelMargin;
+    }
+  });
+
+  // Axis transform based on orientation
+  axisTransform = computed(() => {
+    const orientation = this.orientation();
+    const height = this.responsiveService?.plotHeight() ?? 300;
+
+    if (orientation === 'top') {
+      return 'translate(0, 0)';
+    } else {
+      return `translate(0, ${height})`;
+    }
+  });
+
   ticks = computed(() => {
     const data = this.data();
     const dataKey = this.dataKey();
-    const width = this.axisWidth();
-    
-    if (!data.length) return [];
-    
+    const width = this.actualWidth();
+
+    if (!data.length || width <= 0) return [];
+
     if (this.type() === 'category') {
       // Category scale for categorical data
       const domain = this.scaleService.getCategoryDomain(data, dataKey);
@@ -114,7 +187,7 @@ export class XAxisComponent {
       return this.scaleService.generateLinearTicks(scale, this.tickCount());
     }
   });
-  
+
   formatTick(value: any): string {
     const formatter = this.tickFormatter();
     if (formatter) {

@@ -40,4 +40,9 @@ export class ChartLayoutService {
     this.store.select(selectHeight).subscribe(height => this.height.set(height));
     this.store.select(selectOffset).subscribe(offset => this.offset.set(offset));
   }
+  
+  setDimensions(width: number, height: number): void {
+    this.width.set(width);
+    this.height.set(height);
+  }
 }
