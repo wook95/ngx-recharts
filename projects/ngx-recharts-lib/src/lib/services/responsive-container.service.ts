@@ -8,6 +8,13 @@ export interface AxisOffset {
   bottom: number;
 }
 
+export interface AxisInfo {
+  hasBottomXAxisLabel: boolean;
+  hasTopXAxisLabel: boolean;
+  hasLeftYAxisLabel: boolean;
+  hasRightYAxisLabel: boolean;
+}
+
 export interface LegendOffset {
   width: number;
   height: number;
@@ -18,7 +25,7 @@ export class ResponsiveContainerService {
   private _width = signal<number>(0);
   private _height = signal<number>(0);
   private _margin = signal<ChartMargin>({
-    top: 5,
+    top: 10, // Increased to prevent Y-axis top tick clipping
     right: 5,
     bottom: 5,
     left: 5,
@@ -36,12 +43,20 @@ export class ResponsiveContainerService {
     width: 0,
     height: 40, // Default legend space
   });
+  
+  private _axisInfo = signal<AxisInfo>({
+    hasBottomXAxisLabel: false,
+    hasTopXAxisLabel: false,
+    hasLeftYAxisLabel: false,
+    hasRightYAxisLabel: false,
+  });
 
   readonly width = this._width.asReadonly();
   readonly height = this._height.asReadonly();
   readonly margin = this._margin.asReadonly();
   readonly axisOffset = this._axisOffset.asReadonly();
   readonly legendOffset = this._legendOffset.asReadonly();
+  readonly axisInfo = this._axisInfo.asReadonly();
 
   // Total offset calculation following recharts pattern
   readonly totalOffset = computed(() => {
@@ -85,5 +100,28 @@ export class ResponsiveContainerService {
   
   setLegendOffset(offset: Partial<LegendOffset>): void {
     this._legendOffset.update(current => ({ ...current, ...offset }));
+  }
+  
+  setAxisInfo(info: Partial<AxisInfo>): void {
+    this._axisInfo.update(current => ({ ...current, ...info }));
+  }
+  
+  resetOffsets(): void {
+    this._axisOffset.set({
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+    });
+    this._legendOffset.set({
+      width: 0,
+      height: 0,
+    });
+    this._axisInfo.set({
+      hasBottomXAxisLabel: false,
+      hasTopXAxisLabel: false,
+      hasLeftYAxisLabel: false,
+      hasRightYAxisLabel: false,
+    });
   }
 }

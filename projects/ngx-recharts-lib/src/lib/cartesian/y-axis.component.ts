@@ -93,14 +93,15 @@ export class YAxisComponent {
         const orientation = this.orientation();
         const hasLabel = !!this.label();
         
-        // Calculate axis width: tick size + tick margin + text width + label space
+        // Calculate axis width with increased label gap
         const tickSize = 6;
         const tickMargin = this.tickMargin();
         const textWidth = 40; // Approximate width for tick text
-        const labelWidth = hasLabel ? 20 : 0;
-        const padding = 5;
+        const labelGapWithTick = 20; // Increased gap for better spacing
+        const labelWidth = hasLabel ? 14 : 0; // Label text height (rotated)
+        const padding = 10; // Extra padding for better spacing
         
-        const axisWidth = tickSize + tickMargin + textWidth + labelWidth + padding;
+        const axisWidth = tickSize + tickMargin + textWidth + (hasLabel ? labelGapWithTick + labelWidth : 0) + padding;
         
         if (orientation === 'right') {
           this.responsiveService.setAxisOffset({ right: axisWidth });
@@ -122,7 +123,7 @@ export class YAxisComponent {
   unit = input<string>();
   hide = input<boolean>(false);
   data = input<ChartData[]>([]);
-  tickMargin = input<number>(8); // Increased from recharts default of 2
+  tickMargin = input<number>(2); // Recharts default
 
   // Internal properties
   axisWidth = input<number>(60);
@@ -149,17 +150,16 @@ export class YAxisComponent {
   );
   labelX = computed(() => {
     const orientation = this.orientation();
-    // Label should be positioned further away from tick text
-    // Estimate text width for longest tick + extra margin
+    // Increased gap between tick text and label for better readability
     const textWidth = 40; // Approximate width for tick text
-    const labelMargin = 15;
+    const labelGapWithTick = 20; // Increased from recharts 5 to 20
     const tickSize = Math.abs(this.tickSize());
     const tickMargin = this.tickMargin();
     
     if (orientation === 'right') {
-      return tickSize + tickMargin + textWidth + labelMargin;
+      return tickSize + tickMargin + textWidth + labelGapWithTick;
     } else {
-      return -(tickSize + tickMargin + textWidth + labelMargin);
+      return -(tickSize + tickMargin + textWidth + labelGapWithTick);
     }
   });
 

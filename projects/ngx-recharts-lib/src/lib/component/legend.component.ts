@@ -1,13 +1,35 @@
-import { Component, input, computed, signal, inject, OnInit, OnDestroy, ElementRef, viewChild, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DefaultLegendContentComponent } from './default-legend-content.component';
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { DefaultLegendContentComponent } from './default-legend-content.component';
 import { ResponsiveContainerComponent } from './responsive-container.component';
 
 export interface LegendPayload {
   value: string | undefined;
-  type?: 'line' | 'plainline' | 'rect' | 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none';
+  type?:
+    | 'line'
+    | 'plainline'
+    | 'rect'
+    | 'circle'
+    | 'cross'
+    | 'diamond'
+    | 'square'
+    | 'star'
+    | 'triangle'
+    | 'wye'
+    | 'none';
   color?: string;
   payload?: {
     strokeDasharray?: number | string;
@@ -27,11 +49,12 @@ export type LegendLayout = 'horizontal' | 'vertical';
   standalone: true,
   imports: [CommonModule, DefaultLegendContentComponent],
   template: `
-    <div 
+    <div
       #legendWrapper
       class="recharts-legend-wrapper"
       [style]="legendStyle()"
-      *ngIf="payload() && payload().length > 0">
+      *ngIf="payload() && payload().length > 0"
+    >
       <ngx-default-legend-content
         [payload]="payload()"
         [layout]="layout()"
@@ -42,19 +65,21 @@ export type LegendLayout = 'horizontal' | 'vertical';
         [formatter]="formatter()"
         [onClick]="onClick()"
         [onMouseEnter]="onMouseEnter()"
-        [onMouseLeave]="onMouseLeave()">
+        [onMouseLeave]="onMouseLeave()"
+      >
       </ngx-default-legend-content>
     </div>
   `,
-  styles: [`
-    .recharts-legend-wrapper {
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px 0; /* Increased padding for better spacing */
-    }
-  `]
+  styles: [
+    `
+      .recharts-legend-wrapper {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    `,
+  ],
 })
 export class LegendComponent implements OnInit, OnDestroy {
   // Inputs - matching recharts API
@@ -64,7 +89,18 @@ export class LegendComponent implements OnInit, OnDestroy {
   align = input<LegendAlign>('center');
   verticalAlign = input<LegendVerticalAlign>('bottom');
   iconSize = input<number>(14);
-  iconType = input<'line' | 'plainline' | 'square' | 'rect' | 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye'>();
+  iconType = input<
+    | 'line'
+    | 'plainline'
+    | 'square'
+    | 'rect'
+    | 'circle'
+    | 'cross'
+    | 'diamond'
+    | 'star'
+    | 'triangle'
+    | 'wye'
+  >();
   payload = input<LegendPayload[]>([]);
   content = input<any>(); // ReactElement | Function
   formatter = input<(value: any, entry: LegendPayload, index: number) => any>();
@@ -86,21 +122,33 @@ export class LegendComponent implements OnInit, OnDestroy {
       }
     });
   }
-  
+
   // Event handlers
-  onClick = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseDown = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseUp = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseMove = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseOver = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseOut = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseEnter = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
-  onMouseLeave = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  onClick =
+    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  onMouseDown =
+    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  onMouseUp =
+    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  onMouseMove =
+    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  onMouseOver =
+    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  onMouseOut =
+    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  onMouseEnter =
+    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  onMouseLeave =
+    input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
 
   // Services
   private chartLayoutService = inject(ChartLayoutService);
-  private responsiveService = inject(ResponsiveContainerService, { optional: true });
-  private responsiveContainer = inject(ResponsiveContainerComponent, { optional: true });
+  private responsiveService = inject(ResponsiveContainerService, {
+    optional: true,
+  });
+  private responsiveContainer = inject(ResponsiveContainerComponent, {
+    optional: true,
+  });
 
   // ViewChild
   legendWrapper = viewChild<ElementRef<HTMLDivElement>>('legendWrapper');
@@ -116,44 +164,59 @@ export class LegendComponent implements OnInit, OnDestroy {
     const containerWidth = this.responsiveService?.width() || 0;
     const containerHeight = this.responsiveService?.height() || 0;
     const bbox = this.boundingBox();
-    
-    // recharts-style absolute positioning
+    const axisInfo = this.responsiveService?.axisInfo();
+
+    // recharts-style absolute positioning - no padding needed
     const style: Record<string, any> = {
       position: 'absolute',
       width: this.width() || containerWidth || 'auto',
       height: this.height() || 'auto',
       textAlign: this.align(),
       ...this.getDefaultPosition(containerWidth, containerHeight, bbox),
-      ...wrapperStyle
+      ...wrapperStyle,
     };
 
     return style;
   });
 
-  private getDefaultPosition(chartWidth: number, chartHeight: number, box: { width: number; height: number }) {
+  private getDefaultPosition(
+    chartWidth: number,
+    chartHeight: number,
+    box: { width: number; height: number }
+  ) {
     const { align, verticalAlign } = this;
     let hPos: Record<string, any> = {};
     let vPos: Record<string, any> = {};
 
-    // Horizontal positioning
+    // Get plot area dimensions for proper alignment
+    const plotWidth = this.responsiveService?.plotWidth() || 0;
+    const totalOffset = this.responsiveService?.totalOffset();
+    const leftOffset = totalOffset?.left || 0;
+    const topOffset = totalOffset?.top || 0;
+
+    // Horizontal positioning - align to plot area, not full chart
     if (align() === 'center') {
-      hPos = { left: `${((chartWidth || 0) - box.width) / 2}px` };
+      hPos = { left: `${leftOffset + (plotWidth - box.width) / 2}px` };
     } else if (align() === 'right') {
-      hPos = { right: '0px' };
+      hPos = { left: `${leftOffset + plotWidth - box.width}px` };
     } else {
-      hPos = { left: '0px' };
+      hPos = { left: `${leftOffset}px` };
     }
 
     // Vertical positioning - legend positioned in reserved space
     if (verticalAlign() === 'middle') {
       vPos = { top: `${((chartHeight || 0) - box.height) / 2}px` };
     } else if (verticalAlign() === 'bottom') {
-      // Position legend in the bottom reserved space
+      // Position legend in the bottom reserved space with dynamic spacing
       const plotHeight = this.responsiveService?.plotHeight() || 0;
-      const topOffset = this.responsiveService?.totalOffset()?.top || 0;
-      vPos = { top: `${topOffset + plotHeight + 10}px` };
+      const axisInfo = this.responsiveService?.axisInfo();
+      const hasBottomXAxis = axisInfo?.hasBottomXAxisLabel || false;
+
+      // More spacing when X-axis is at bottom to avoid overlap
+      const legendSpacing = hasBottomXAxis ? 46 : 10;
+      vPos = { top: `${topOffset + plotHeight + legendSpacing}px` };
     } else {
-      // Position legend in the top reserved space  
+      // Position legend in the top reserved space
       vPos = { top: '10px' };
     }
 
@@ -171,7 +234,7 @@ export class LegendComponent implements OnInit, OnDestroy {
 
   private observeLegendSize(element: HTMLElement): void {
     this.cleanupResizeObserver();
-    
+
     this.resizeObserver = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
@@ -179,9 +242,9 @@ export class LegendComponent implements OnInit, OnDestroy {
         this.updateBoundingBox(width, height);
       }
     });
-    
+
     this.resizeObserver.observe(element);
-    
+
     // Initial size calculation
     const rect = element.getBoundingClientRect();
     this.updateBoundingBox(rect.width, rect.height);
@@ -196,10 +259,10 @@ export class LegendComponent implements OnInit, OnDestroy {
 
   updateBoundingBox(width: number, height: number) {
     this.boundingBox.set({ width, height });
-    
-    // Update responsive service with legend size
+
+    // Update responsive service with legend size - recharts style (exact size only)
     if (this.responsiveService) {
-      this.responsiveService.setLegendOffset({ height: height + 20 }); // Add padding
+      this.responsiveService.setLegendOffset({ height: height });
     }
   }
 }

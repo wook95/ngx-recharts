@@ -91,7 +91,7 @@ import { TestChartComponent } from './test-chart.component';
 
       <div class="chart-container">
         <h2>Bar Chart - Default Orientation (Bottom/Left)</h2>
-        <div style="width: 100%; height: 450px;">
+        <div style="width: 100%; height: 500px;">
           <ngx-responsive-container [width]="'100%'" [height]="'100%'">
             <ngx-bar-chart [data]="chartData">
               <svg:g ngx-cartesian-grid strokeDasharray="3 3"></svg:g>
@@ -128,7 +128,7 @@ import { TestChartComponent } from './test-chart.component';
               [payload]="barChartLegend"
               [layout]="'horizontal'"
               [align]="'center'"
-              [verticalAlign]="'top'"
+              [verticalAlign]="'bottom'"
             >
             </ngx-legend>
           </ngx-responsive-container>
@@ -171,32 +171,26 @@ import { TestChartComponent } from './test-chart.component';
                 </svg:linearGradient>
               </svg:defs>
 
+              <svg:g ngx-cartesian-grid strokeDasharray="3 3"></svg:g>
               <svg:g
                 ngx-x-axis
                 [data]="chartData"
-                [axisWidth]="600 - 30"
+                [orientation]="'bottom'"
                 dataKey="name"
+                [label]="'Categories'"
               ></svg:g>
               <svg:g
                 ngx-y-axis
                 [data]="chartData"
-                [axisHeight]="400 - 10"
+                [orientation]="'left'"
                 dataKey="uv"
-              ></svg:g>
-              <svg:g
-                ngx-cartesian-grid
-                [width]="600 - 30"
-                [height]="400 - 10"
-                strokeDasharray="3 3"
+                [label]="'Values'"
               ></svg:g>
 
               <!-- Multiple Area components -->
               <svg:g
                 ngx-area
                 [data]="chartData"
-                [chartWidth]="600 - 30"
-                [chartHeight]="400 - 10"
-                [margin]="{ top: 0, right: 0, bottom: 0, left: 0 }"
                 dataKey="uv"
                 type="monotone"
                 stroke="#8884d8"
@@ -206,9 +200,6 @@ import { TestChartComponent } from './test-chart.component';
               <svg:g
                 ngx-area
                 [data]="chartData"
-                [chartWidth]="600 - 30"
-                [chartHeight]="400 - 10"
-                [margin]="{ top: 0, right: 0, bottom: 0, left: 0 }"
                 dataKey="pv"
                 type="monotone"
                 stroke="#82ca9d"
@@ -221,9 +212,8 @@ import { TestChartComponent } from './test-chart.component';
             <ngx-legend
               [payload]="areaChartLegend"
               [layout]="'horizontal'"
-              [align]="'left'"
+              [align]="'center'"
               [verticalAlign]="'bottom'"
-              [wrapperStyle]="{ width: '600px', textAlign: 'center' }"
             >
             </ngx-legend>
           </ngx-responsive-container>
@@ -391,7 +381,6 @@ import { TestChartComponent } from './test-chart.component';
         border: 1px solid #ddd;
         border-radius: 4px;
         padding: 20px;
-        background: #f9f9f9;
       }
 
       .info {

@@ -42,6 +42,11 @@ export class AreaChartComponent {
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
   
   constructor() {
+    // Reset offsets when chart initializes
+    if (this.responsiveService) {
+      this.responsiveService.resetOffsets();
+    }
+    
     // Effect to update margin in responsive service
     effect(() => {
       if (this.responsiveService) {
@@ -54,7 +59,7 @@ export class AreaChartComponent {
   data = input.required<ChartData[]>();
   width = input<number>(600);
   height = input<number>(400);
-  margin = input<ChartMargin>({ top: 20, right: 30, bottom: 40, left: 60 });
+  margin = input<ChartMargin>({ top: 10, right: 5, bottom: 5, left: 5 });
   
   // Use responsive dimensions if available, otherwise fall back to props
   actualWidth = computed(() => {

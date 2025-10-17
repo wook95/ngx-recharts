@@ -2,9 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
-  effect,
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AxisOrientation, AxisType } from '../core/axis-types';
@@ -52,7 +52,7 @@ import { ScaleService } from '../services/scale.service';
           [attr.x]="0"
           [attr.y]="textY()"
           text-anchor="middle"
-          dominant-baseline="hanging"
+          [attr.dominant-baseline]="textBaseline()"
           fill="#666"
         >
           {{ formatTick(tick.value) }}
@@ -81,27 +81,35 @@ export class XAxisComponent {
   private responsiveService = inject(ResponsiveContainerService, {
     optional: true,
   });
-  
+
   constructor() {
     // Update axis offset when orientation or label changes
     effect(() => {
       if (this.responsiveService && !this.hide()) {
         const orientation = this.orientation();
         const hasLabel = !!this.label();
-        
-        // Calculate axis height: tick size + tick margin + text height + label space
+
+        // Calculate axis height with increased label gap
         const tickSize = 6;
         const tickMargin = this.tickMargin();
-        const textHeight = 14;
-        const labelHeight = hasLabel ? 20 : 0;
-        const padding = 5;
-        
-        const axisHeight = tickSize + tickMargin + textHeight + labelHeight + padding;
-        
+        const textHeight = 14; // Estimated text height
+        const labelGapWithTick = 20; // Increased gap for better spacing
+        const labelHeight = hasLabel ? 14 : 0; // Label text height
+        const padding = 8; // Extra padding for better spacing
+
+        const axisHeight =
+          tickSize +
+          tickMargin +
+          textHeight +
+          (hasLabel ? labelGapWithTick + labelHeight : 0) +
+          padding;
+
         if (orientation === 'top') {
           this.responsiveService.setAxisOffset({ top: axisHeight });
+          this.responsiveService.setAxisInfo({ hasTopXAxisLabel: hasLabel });
         } else {
           this.responsiveService.setAxisOffset({ bottom: axisHeight });
+          this.responsiveService.setAxisInfo({ hasBottomXAxisLabel: hasLabel });
         }
       }
     });
@@ -118,7 +126,7 @@ export class XAxisComponent {
   unit = input<string>();
   hide = input<boolean>(false);
   data = input<ChartData[]>([]);
-  tickMargin = input<number>(8); // Increased from recharts default of 2
+  tickMargin = input<number>(2); // Recharts default
 
   // Internal properties
   axisWidth = input<number>(400);
@@ -138,21 +146,24 @@ export class XAxisComponent {
     const tickSize = Math.abs(this.tickSize());
     const margin = this.tickMargin();
     // tickMargin is the distance from tick line end to text
-    return orientation === 'top' ? -(tickSize + margin) : (tickSize + margin);
+    return orientation === 'top' ? -(tickSize + margin) : tickSize + margin;
+  });
+  
+  textBaseline = computed(() => {
+    return this.orientation() === 'top' ? 'text-after-edge' : 'hanging';
   });
   labelY = computed(() => {
     const orientation = this.orientation();
-    // Label should be positioned further away from tick text
-    // Estimate text height as ~14px and add extra margin
+    // Increased gap between tick text and label for better readability
     const textHeight = 14;
-    const labelMargin = 10;
+    const labelGapWithTick = orientation === 'top' ? 5 : 20; // Increased from recharts 5 to 20
     const tickSize = Math.abs(this.tickSize());
     const tickMargin = this.tickMargin();
-    
+
     if (orientation === 'top') {
-      return -(tickSize + tickMargin + textHeight + labelMargin);
+      return -(tickSize + tickMargin + textHeight + labelGapWithTick);
     } else {
-      return tickSize + tickMargin + textHeight + labelMargin;
+      return tickSize + tickMargin + textHeight + labelGapWithTick;
     }
   });
 
