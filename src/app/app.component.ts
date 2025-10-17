@@ -61,6 +61,7 @@ import { TestChartComponent } from './test-chart.component';
                 [orientation]="'top'"
                 dataKey="name"
                 [label]="'Categories'"
+                [chartType]="'line'"
               ></svg:g>
               <svg:g
                 ngx-y-axis
@@ -101,6 +102,7 @@ import { TestChartComponent } from './test-chart.component';
                 [orientation]="'bottom'"
                 dataKey="name"
                 [label]="'Categories'"
+                [chartType]="'bar'"
               ></svg:g>
               <svg:g
                 ngx-y-axis
@@ -178,6 +180,7 @@ import { TestChartComponent } from './test-chart.component';
                 [orientation]="'bottom'"
                 dataKey="name"
                 [label]="'Categories'"
+                [chartType]="'area'"
               ></svg:g>
               <svg:g
                 ngx-y-axis

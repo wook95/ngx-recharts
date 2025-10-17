@@ -127,6 +127,7 @@ export class XAxisComponent {
   hide = input<boolean>(false);
   data = input<ChartData[]>([]);
   tickMargin = input<number>(2); // Recharts default
+  chartType = input<'line' | 'area' | 'bar' | 'composed'>('bar'); // Chart type for tick positioning
 
   // Internal properties
   axisWidth = input<number>(400);
@@ -183,14 +184,25 @@ export class XAxisComponent {
     const data = this.data();
     const dataKey = this.dataKey();
     const width = this.actualWidth();
+    const chartType = this.chartType();
 
     if (!data.length || width <= 0) return [];
 
     if (this.type() === 'category') {
-      // Category scale for categorical data
-      const domain = this.scaleService.getCategoryDomain(data, dataKey);
-      const scale = this.scaleService.createBandScale(domain, [0, width]);
-      return this.scaleService.generateBandTicks(scale);
+      // Use different scales based on chart type
+      if (chartType === 'line' || chartType === 'area') {
+        // For continuous data (Line/Area), use linear scale for even distribution
+        const scale = this.scaleService.createLinearScale([0, data.length - 1], [0, width]);
+        return data.map((item, index) => ({
+          value: String(item[dataKey] || ''),
+          coordinate: scale(index)
+        }));
+      } else {
+        // For discrete data (Bar), use band scale
+        const domain = this.scaleService.getCategoryDomain(data, dataKey);
+        const scale = this.scaleService.createBandScale(domain, [0, width]);
+        return this.scaleService.generateBandTicks(scale);
+      }
     } else {
       // Linear scale for numerical data
       const domain = this.scaleService.getLinearDomain(data, dataKey);

@@ -122,25 +122,18 @@ export class LineComponent {
 
     if (!data.length || plotArea.width <= 0 || plotArea.height <= 0) return [];
 
-    // Create scales using D3
-    const xDomain = this.scaleService.getCategoryDomain(data, 'name');
+    // Create scales using D3 - Line charts use linear scale for even distribution
     const yDomain = this.scaleService.getLinearDomain(data, dataKey);
-
-    const xScale = this.scaleService.createBandScale(xDomain, [
-      0,
-      plotArea.width,
-    ]);
-    const yScale = this.scaleService.createLinearScale(yDomain, [
-      plotArea.height,
-      0,
-    ]);
+    
+    // For Line charts, use linear scale to distribute points evenly across width
+    const xScale = this.scaleService.createLinearScale([0, data.length - 1], [0, plotArea.width]);
+    const yScale = this.scaleService.createLinearScale(yDomain, [plotArea.height, 0]);
 
     return data.map((item, index) => {
       const value = getNumericDataValue(item, dataKey);
-      const categoryValue = String(item['name'] || '');
-
-      // Use D3 scales for positioning
-      const x = (xScale(categoryValue) || 0) + xScale.bandwidth() / 2;
+      
+      // Use index-based positioning for even distribution
+      const x = xScale(index);
       const y = yScale(value);
 
       return {

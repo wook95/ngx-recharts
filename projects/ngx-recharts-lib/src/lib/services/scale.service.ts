@@ -52,4 +52,12 @@ export class ScaleService {
       coordinate: (scale(value) || 0) + scale.bandwidth() / 2
     }));
   }
+  
+  // For Area/Line charts - use band start position, not center
+  generateContinuousTicks(scale: ScaleBand<string>) {
+    return scale.domain().map(value => ({
+      value,
+      coordinate: scale(value) || 0  // Start at band beginning for continuous data
+    }));
+  }
 }
