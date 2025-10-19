@@ -53,6 +53,8 @@ export class LabelComponent {
   width = input<number>();
   fill = input<string>('#666');
   children = input<string | number>();
+  content = input<any>(); // React element or function for custom rendering
+  id = input<string>(); // Unique id for SSR
 
   // Get effective viewBox
   private effectiveViewBox = computed(() => {
@@ -166,6 +168,41 @@ export class LabelComponent {
         return {
           x: x + width / 2,
           y: y + height - offset,
+          textAnchor: 'middle' as TextAnchor,
+          verticalAnchor: 'end' as TextVerticalAnchor
+        };
+      case 'insideStart':
+        return {
+          x: x + offset,
+          y: y + height / 2,
+          textAnchor: 'start' as TextAnchor,
+          verticalAnchor: 'middle' as TextVerticalAnchor
+        };
+      case 'insideEnd':
+        return {
+          x: x + width - offset,
+          y: y + height / 2,
+          textAnchor: 'end' as TextAnchor,
+          verticalAnchor: 'middle' as TextVerticalAnchor
+        };
+      case 'end':
+        return {
+          x: x + width + offset,
+          y: y + height / 2,
+          textAnchor: 'start' as TextAnchor,
+          verticalAnchor: 'middle' as TextVerticalAnchor
+        };
+      case 'centerTop':
+        return {
+          x: x + width / 2,
+          y: y + height / 2,
+          textAnchor: 'middle' as TextAnchor,
+          verticalAnchor: 'start' as TextVerticalAnchor
+        };
+      case 'centerBottom':
+        return {
+          x: x + width / 2,
+          y: y + height / 2,
           textAnchor: 'middle' as TextAnchor,
           verticalAnchor: 'end' as TextVerticalAnchor
         };

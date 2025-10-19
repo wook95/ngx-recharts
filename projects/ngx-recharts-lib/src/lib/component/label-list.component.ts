@@ -48,6 +48,9 @@ export class LabelListComponent {
   fill = input<string>();
   textBreakAll = input<boolean>(false);
   formatter = input<(label: any) => any>();
+  content = input<any>(); // React element or function for custom rendering
+  id = input<string>(); // Unique id for SSR
+  clockWise = input<boolean>(false); // For radial charts
 
   // Computed label entries
   labelEntries = computed(() => {
