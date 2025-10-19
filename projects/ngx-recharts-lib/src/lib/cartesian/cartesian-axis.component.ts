@@ -10,6 +10,7 @@ import { AxisOrientation, AxisType } from '../core/axis-types';
 import { ChartData } from '../core/types';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { ScaleService } from '../services/scale.service';
+import { LabelComponent } from '../component/label.component';
 
 export interface ViewBox {
   x: number;
@@ -21,6 +22,7 @@ export interface ViewBox {
 @Component({
   selector: 'svg:g[ngx-cartesian-axis]',
   standalone: true,
+  imports: [LabelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <svg:g class="recharts-cartesian-axis" [attr.transform]="axisTransform()">
@@ -71,18 +73,15 @@ export interface ViewBox {
       </svg:g>
       }
 
-      <!-- Label -->
+      <!-- Label using Label component -->
       @if (label()) {
-      <svg:text
-        class="recharts-label"
-        [attr.x]="labelPosition().x"
-        [attr.y]="labelPosition().y"
-        [attr.text-anchor]="labelTextAnchor()"
-        [attr.fill]="labelStyle().fill"
-        [attr.transform]="labelTransform()"
-      >
-        {{ label() }}
-      </svg:text>
+      <ngx-label
+        [viewBox]="labelViewBox()"
+        [value]="label()"
+        [position]="labelPosition2()"
+        [angle]="labelAngle()"
+        [fill]="labelStyle().fill"
+      />
       } }
     </svg:g>
   `,
@@ -244,8 +243,7 @@ export class CartesianAxisComponent {
   }));
 
   labelStyle = computed(() => ({
-    fill: '#666',
-    fontSize: '14px',
+    fill: '#666'
   }));
 
   // Position computations
@@ -312,30 +310,31 @@ export class CartesianAxisComponent {
     return 'central';
   });
 
-  labelPosition = computed(() => {
-    const orientation = this.orientation();
+  // Label viewBox for Label component
+  labelViewBox = computed(() => {
     const width = this.actualWidth();
     const height = this.actualHeight();
-
-    if (orientation === 'top' || orientation === 'bottom') {
-      return { x: width / 2, y: orientation === 'top' ? -40 : 40 };
-    } else {
-      // Increase distance from tick text for Y-axis labels
-      return { x: orientation === 'left' ? -60 : 60, y: height / 2 };
-    }
+    return {
+      x: 0,
+      y: 0,
+      width,
+      height
+    };
   });
 
-  labelTextAnchor = computed(() => 'middle');
-
-  labelTransform = computed(() => {
+  // Label position using Label component's position system
+  labelPosition2 = computed(() => {
     const orientation = this.orientation();
-    const pos = this.labelPosition();
-    
-    // Rotate Y-axis labels 90 degrees
-    if (orientation === 'left' || orientation === 'right') {
-      return `rotate(-90, ${pos.x}, ${pos.y})`;
-    }
-    return '';
+    if (orientation === 'top') return 'top';
+    if (orientation === 'bottom') return 'bottom';
+    if (orientation === 'left') return 'left';
+    return 'right';
+  });
+
+  // Label angle for Y-axis rotation
+  labelAngle = computed(() => {
+    const orientation = this.orientation();
+    return (orientation === 'left' || orientation === 'right') ? -90 : undefined;
   });
 
   getTickTransform(coordinate: number): string {
