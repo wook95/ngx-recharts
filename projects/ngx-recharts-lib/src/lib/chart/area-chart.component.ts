@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   ChangeDetectionStrategy,
+  ContentChild,
   effect
 } from '@angular/core';
 import { Store } from '@ngrx/store';
@@ -13,6 +14,7 @@ import { ChartData, ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { TooltipService } from '../services/tooltip.service';
 
 @Component({
   selector: 'ngx-area-chart',
@@ -22,6 +24,7 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
     RechartsWrapperComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [TooltipService],
   template: `
     <ngx-recharts-wrapper
       [width]="actualWidth()"
@@ -43,6 +46,8 @@ export class AreaChartComponent {
   private store = inject(Store);
   private chartLayoutService = inject(ChartLayoutService);
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
+  
+
   
   constructor() {
     // Reset offsets when chart initializes
@@ -88,4 +93,6 @@ export class AreaChartComponent {
     const m = this.margin();
     return this.actualHeight() - m.top - m.bottom;
   });
+
+
 }

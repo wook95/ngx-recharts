@@ -5,6 +5,7 @@ import {
   inject,
   ChangeDetectionStrategy,
   ContentChildren,
+  ContentChild,
   QueryList,
   AfterContentInit,
   effect
@@ -21,6 +22,7 @@ import { ChartData, ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { TooltipService } from '../services/tooltip.service';
 
 @Component({
   selector: 'ngx-bar-chart',
@@ -30,6 +32,7 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
     RechartsWrapperComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [TooltipService],
   template: `
     <ngx-recharts-wrapper
       [width]="actualWidth()"
@@ -70,6 +73,7 @@ export class BarChartComponent implements AfterContentInit {
   @ContentChildren(XAxisComponent) xAxes!: QueryList<XAxisComponent>;
   @ContentChildren(YAxisComponent) yAxes!: QueryList<YAxisComponent>;
   @ContentChildren(CartesianGridComponent) grids!: QueryList<CartesianGridComponent>;
+
   
   // Inputs
   data = input.required<ChartData[]>();
@@ -112,4 +116,6 @@ export class BarChartComponent implements AfterContentInit {
       // Pass chart data and dimensions to each bar
     });
   }
+
+
 }

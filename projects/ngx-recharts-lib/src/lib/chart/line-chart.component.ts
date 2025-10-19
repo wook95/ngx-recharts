@@ -2,12 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ContentChild,
   effect,
   inject,
   input,
   Injector,
   SkipSelf,
   Optional,
+  AfterContentInit,
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ChartContainerComponent } from '../container/chart-container.component';
@@ -16,7 +18,7 @@ import { ChartData, ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
-import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
+
 import { TooltipService } from '../services/tooltip.service';
 
 
@@ -25,13 +27,7 @@ import { TooltipService } from '../services/tooltip.service';
   standalone: true,
   imports: [ChartContainerComponent, RechartsWrapperComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [
-    TooltipService,
-    {
-      provide: CHART_TOOLTIP_SERVICE,
-      useExisting: TooltipService,
-    },
-  ],
+  providers: [TooltipService],
 
   template: `
     <ngx-recharts-wrapper [width]="actualWidth()" [height]="actualHeight()">
@@ -48,12 +44,14 @@ import { TooltipService } from '../services/tooltip.service';
     </ngx-recharts-wrapper>
   `,
 })
-export class LineChartComponent {
+export class LineChartComponent implements AfterContentInit {
   private store = inject(Store);
   private chartLayoutService = inject(ChartLayoutService);
   private responsiveService = inject(ResponsiveContainerService, {
     optional: true,
   });
+
+
 
   constructor() {
     // Reset offsets when chart initializes
@@ -104,5 +102,7 @@ export class LineChartComponent {
     return this.actualHeight() - m.top - m.bottom;
   });
 
-
+  ngAfterContentInit() {
+    console.log('🎯 LineChart initialized');
+  }
 }

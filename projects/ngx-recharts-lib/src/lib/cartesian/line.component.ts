@@ -9,7 +9,7 @@ import { Store } from '@ngrx/store';
 import { ChartData, getNumericDataValue } from '../core/types';
 import { ScaleService } from '../services/scale.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
-import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
+import { TooltipService } from '../services/tooltip.service';
 
 export interface LinePoint {
   x: number;
@@ -42,7 +42,7 @@ export interface LinePoint {
         (mouseout)="handleMouseOut($event)"
         (mouseenter)="handleMouseEnter($event)"
         (mouseleave)="handleMouseLeave($event)" />
-      
+
       <!-- Regular Dots -->
       @if (shouldShowDots()) {
         @for (point of finalPoints(); track $index) {
@@ -56,7 +56,7 @@ export interface LinePoint {
             [attr.stroke-width]="dotProps().strokeWidth || 1" />
         }
       }
-      
+
       <!-- Active Dot (shown when tooltip is active) -->
       @if (shouldShowActiveDot() && activePointIndex() !== -1) {
         @let activePoint = finalPoints()[activePointIndex()];
@@ -78,60 +78,60 @@ export class LineComponent {
   private store = inject(Store);
   private scaleService = inject(ScaleService);
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
-  private tooltipService = inject(CHART_TOOLTIP_SERVICE, { optional: true });
+  private tooltipService = inject(TooltipService, { optional: true });
 
   // Core recharts API inputs
   dataKey = input.required<string>();
   data = input<ChartData[]>([]);
-  
+
   // Interpolation type
   type = input<'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' | Function>('linear');
-  
+
   // Axis IDs
   xAxisId = input<string | number>(0);
   yAxisId = input<string | number>(0);
-  
+
   // Legend
   legendType = input<'line' | 'plainline' | 'square' | 'rect' | 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'>('line');
-  
+
   // Dot configuration
   dot = input<boolean | Record<string, any> | any>(true);
   activeDot = input<boolean | Record<string, any> | any>(true);
-  
+
   // Label configuration
   label = input<boolean | Record<string, any> | any>(false);
-  
+
   // Visibility
   hide = input<boolean>(false);
-  
+
   // Points (usually calculated internally)
   points = input<LinePoint[]>([]);
-  
+
   // Styling
   stroke = input<string>('#3182bd');
   strokeWidth = input<string | number>(1);
   strokeDasharray = input<string | undefined>(undefined);
   fill = input<string>('none');
-  
+
   // Layout
   layout = input<'horizontal' | 'vertical'>('horizontal');
-  
+
   // Data connection
   connectNulls = input<boolean>(false);
-  
+
   // Tooltip/Legend data
   unit = input<string | number | undefined>(undefined);
   name = input<string | number | undefined>(undefined);
-  
+
   // Animation
   isAnimationActive = input<boolean>(true);
   animationBegin = input<number>(0);
   animationDuration = input<number>(1500);
   animationEasing = input<'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'>('ease');
-  
+
   // Unique ID
   id = input<string | undefined>(undefined);
-  
+
   // Event handlers
   onAnimationStart = input<Function | undefined>(undefined);
   onAnimationEnd = input<Function | undefined>(undefined);
@@ -153,7 +153,7 @@ export class LineComponent {
     const responsiveWidth = this.responsiveService?.width() ?? 0;
     return responsiveWidth > 0 ? responsiveWidth : this.chartWidth();
   });
-  
+
   actualHeight = computed(() => {
     const responsiveHeight = this.responsiveService?.height() ?? 0;
     return responsiveHeight > 0 ? responsiveHeight : this.chartHeight();
@@ -171,7 +171,7 @@ export class LineComponent {
   plotArea = computed(() => {
     const plotWidth = this.responsiveService?.plotWidth() ?? 0;
     const plotHeight = this.responsiveService?.plotHeight() ?? 0;
-    
+
     if (plotWidth > 0 && plotHeight > 0) {
       return {
         width: plotWidth,
@@ -180,7 +180,7 @@ export class LineComponent {
         y: 0,
       };
     }
-    
+
     // Fallback to manual calculation
     const margin = this.margin();
     const width = this.actualWidth();
@@ -204,14 +204,14 @@ export class LineComponent {
 
     // Create scales using D3 - Line charts use linear scale for even distribution
     const yDomain = this.scaleService.getLinearDomain(data, dataKey as string);
-    
+
     // For Line charts, use linear scale to distribute points evenly across width
     const xScale = this.scaleService.createLinearScale([0, data.length - 1], [0, plotArea.width]);
     const yScale = this.scaleService.createLinearScale(yDomain, [plotArea.height, 0]);
 
     return data.map((item, index) => {
       const value = getNumericDataValue(item, dataKey as string);
-      
+
       // Use index-based positioning for even distribution
       const x = xScale(index);
       const y = yScale(value);
@@ -240,7 +240,7 @@ export class LineComponent {
 
     // Add line segments based on interpolation type
     const interpolationType = this.type();
-    
+
     if (interpolationType === 'step') {
       // Step interpolation
       for (let i = 1; i < points.length; i++) {
@@ -301,39 +301,25 @@ export class LineComponent {
 
   // Active point index from tooltip service
   activePointIndex = computed(() => {
-    console.log('🔍 DI Debug:', {
-      tooltipService: this.tooltipService,
-      hasService: !!this.tooltipService,
-      dataKey: this.dataKey()
-    });
-    
+
     if (!this.tooltipService) {
-      console.log('🔍 No tooltip service via InjectionToken');
       return -1;
     }
-    
+
     const isActive = this.tooltipService.active();
     if (!isActive) {
-      console.log('🔍 Tooltip not active');
       return -1;
     }
-    
+
     // Find the closest point to the tooltip coordinate
     const points = this.finalPoints();
     const tooltipCoordinate = this.tooltipService.coordinate();
     const tooltipX = tooltipCoordinate.x;
-    
-    console.log('🔍 ActiveDot calculation via InjectionToken:', {
-      dataKey: this.dataKey(),
-      isActive,
-      tooltipX,
-      pointsCount: points.length,
-      points: points.map(p => ({ x: p.x, y: p.y })),
-    });
-    
+
+
     let closestIndex = -1;
     let minDistance = Infinity;
-    
+
     points.forEach((point, index) => {
       const distance = Math.abs(point.x - tooltipX);
       if (distance < minDistance) {
@@ -341,8 +327,7 @@ export class LineComponent {
         closestIndex = index;
       }
     });
-    
-    console.log('🔍 Closest index:', closestIndex, 'minDistance:', minDistance);
+
     return closestIndex;
   });
 

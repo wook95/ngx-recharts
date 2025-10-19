@@ -15,8 +15,10 @@ import { ChartData, ChartMargin, getNumericDataValue } from '../core/types';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { TooltipService } from '../services/tooltip.service';
+import { TooltipConfigService } from '../services/tooltip-config.service';
 import { SurfaceComponent } from './surface.component';
-import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
+
+
 
 @Component({
   selector: 'ngx-chart-container',
@@ -43,7 +45,7 @@ import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
             [attr.width]="plotWidth()"
             [attr.height]="plotHeight()"
             fill="white"
-            stroke="#ccc"
+            stroke="transparent"
           />
           <ng-content></ng-content>
         </svg:g>
@@ -51,12 +53,12 @@ import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
 
       <!-- Tooltip with service binding -->
       <div class="tooltip-container">
-        @if (_tooltipService) {
+        @if (hasTooltipService) {
           <ngx-tooltip
-            [active]="_tooltipService.active()"
-            [payload]="_tooltipService.payload()"
-            [label]="_tooltipService.label()"
-            [coordinate]="_tooltipService.coordinate()"
+            [active]="tooltipActive()"
+            [payload]="tooltipPayload()"
+            [label]="tooltipLabel()"
+            [coordinate]="tooltipCoordinate()"
             [separator]="tooltipConfig().separator"
             [offset]="tooltipConfig().offset"
             [filterNull]="tooltipConfig().filterNull"
@@ -105,22 +107,28 @@ import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
 export class ChartContainerComponent implements AfterContentInit {
   private store = inject(Store);
   private layoutService = inject(ChartLayoutService);
-  private _tooltipService = inject(TooltipService, { optional: true }) || inject(CHART_TOOLTIP_SERVICE, { optional: true });
-  
-  protected get tooltipService(): TooltipService {
-    if (!this._tooltipService) {
-      throw new Error('TooltipService not found. Make sure it is provided in the chart component.');
-    }
-    return this._tooltipService;
+  private _tooltipService = inject(TooltipService, { optional: true });
+  private _tooltipConfigService = inject(TooltipConfigService, { optional: true });
+
+
+
+
+  // Service instance check (not reactive, so simple getter is fine)
+  get hasTooltipService(): boolean {
+    return !!this._tooltipService;
   }
+
+  // Computed properties for reactive tooltip state
+  tooltipActive = computed(() => this._tooltipService?.active() || false);
+  tooltipPayload = computed(() => this._tooltipService?.payload() || []);
+  tooltipLabel = computed(() => this._tooltipService?.label() || '');
+  tooltipCoordinate = computed(() => this._tooltipService?.coordinate() || { x: 0, y: 0 });
   private elementRef = inject(ElementRef);
   private responsiveService = inject(ResponsiveContainerService, {
     optional: true,
   });
   private lastMouseMoveTime = 0;
   private currentDataIndex = -1; // Track current data point
-
-  @ContentChild(TooltipComponent) tooltipComponent?: TooltipComponent;
 
   // Inputs
   data = input.required<ChartData[]>();
@@ -133,10 +141,24 @@ export class ChartContainerComponent implements AfterContentInit {
   tooltip = input<TooltipConfig>({});
 
   // Merged tooltip configuration with defaults
-  tooltipConfig = computed(() => ({
-    ...DEFAULT_TOOLTIP_CONFIG,
-    ...this.tooltip(),
-  }));
+  tooltipConfig = computed(() => {
+    const serviceConfig = this._tooltipConfigService?.config() || {};
+
+    const config = {
+      ...DEFAULT_TOOLTIP_CONFIG,
+      ...this.tooltip(),
+      ...serviceConfig, // TooltipConfigService provides this
+    };
+
+    console.log('🔧 ChartContainer final tooltip config:', {
+      separator: config.separator,
+      offset: config.offset,
+      snapToDataPoint: config.snapToDataPoint,
+      serviceConfig,
+    });
+
+    return config;
+  });
 
   // Computed properties
   chartWidth = computed(() => this.width());
@@ -194,6 +216,7 @@ export class ChartContainerComponent implements AfterContentInit {
     // Check if mouse is within plot area (grid area)
     const plotWidth = this.plotWidth();
     const plotHeight = this.plotHeight();
+
 
     if (x < 0 || x > plotWidth || y < 0 || y > plotHeight) {
       this.currentDataIndex = -1; // Reset index when leaving plot area
@@ -409,20 +432,9 @@ export class ChartContainerComponent implements AfterContentInit {
   }
 
   ngAfterContentInit() {
-    // Connect tooltip component with service if present
-    if (this.tooltipComponent) {
-      console.log('🔗 Tooltip component detected and connected');
-    } else {
-      console.log('⚠️ No tooltip component found in ng-content');
-    }
-
     // Debug tooltip service state
     if (this._tooltipService) {
-      console.log('🔧 TooltipService state:', {
-        active: this._tooltipService.active(),
-        payload: this._tooltipService.payload(),
-        coordinate: this._tooltipService.coordinate(),
-      });
+      console.log('🔧 TooltipService available');
     } else {
       console.log('❌ TooltipService not available');
     }

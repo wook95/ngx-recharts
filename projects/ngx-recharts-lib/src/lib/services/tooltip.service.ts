@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { TooltipPayload } from '../component/tooltip.component';
+import { TooltipConfig } from '../core/tooltip-types';
 
 @Injectable()
 export class TooltipService {
@@ -10,12 +11,16 @@ export class TooltipService {
   private _coordinate = signal({ x: 0, y: 0 });
   private _targetCoordinate = signal({ x: 0, y: 0 });
   private animationFrame?: number;
+  
+  // Tooltip config
+  private _config = signal<TooltipConfig>({});
 
   // Public readonly signals
   readonly active = this._active.asReadonly();
   readonly payload = this._payload.asReadonly();
   readonly label = this._label.asReadonly();
   readonly coordinate = this._coordinate.asReadonly();
+  readonly config = this._config.asReadonly();
 
   showTooltip(
     coordinate: { x: number; y: number },
@@ -55,5 +60,9 @@ export class TooltipService {
         y: coordinate.y // Update Y to follow mouse
       });
     }
+  }
+
+  setConfig(config: TooltipConfig) {
+    this._config.set(config);
   }
 }

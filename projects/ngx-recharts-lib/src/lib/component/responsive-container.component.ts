@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ContentChild,
   effect,
   ElementRef,
   inject,
@@ -11,10 +12,14 @@ import {
   output,
   signal,
   viewChild,
+  AfterContentInit,
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { TooltipComponent } from './tooltip.component';
+import { TooltipConfigService } from '../services/tooltip-config.service';
+
 
 export type Percent = string;
 
@@ -32,7 +37,10 @@ export interface ResponsiveContainerProps {
 @Component({
   selector: 'ngx-responsive-container',
   standalone: true,
-  providers: [ResponsiveContainerService],
+  providers: [
+    ResponsiveContainerService,
+    TooltipConfigService,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -68,12 +76,15 @@ export interface ResponsiveContainerProps {
     `,
   ],
 })
-export class ResponsiveContainerComponent implements OnDestroy {
+export class ResponsiveContainerComponent implements OnDestroy, AfterContentInit {
   private store = inject(Store);
   private chartLayoutService = inject(ChartLayoutService);
   private responsiveService = inject(ResponsiveContainerService);
+  private tooltipConfigService = inject(TooltipConfigService);
   private injector = inject(Injector);
   private resizeObserver?: ResizeObserver;
+  
+  @ContentChild(TooltipComponent) tooltipChild?: TooltipComponent;
 
   // Inputs
   width = input<Percent | number>('100%');
@@ -220,6 +231,24 @@ export class ResponsiveContainerComponent implements OnDestroy {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = undefined;
+    }
+  }
+
+  ngAfterContentInit() {
+    if (this.tooltipChild) {
+      const config = {
+        separator: this.tooltipChild.separator(),
+        offset: this.tooltipChild.offset(),
+        filterNull: this.tooltipChild.filterNull(),
+        snapToDataPoint: this.tooltipChild.snapToDataPoint(),
+        isAnimationActive: this.tooltipChild.isAnimationActive(),
+        animationDuration: this.tooltipChild.animationDuration(),
+      };
+      
+      console.log('🎯 ResponsiveContainer setting tooltip config:', config);
+      this.tooltipConfigService.setConfig(config);
+    } else {
+      console.log('❌ ResponsiveContainer no tooltip child found');
     }
   }
 

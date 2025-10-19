@@ -55,7 +55,7 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
         <h2>Line Chart - X-axis Top, Y-axis Right</h2>
         <div style="width: 100%; height: 500px;">
           <ngx-responsive-container [width]="'100%'" [height]="'100%'">
-            <ngx-line-chart [data]="chartData" [tooltip]="lineTooltipConfig">
+            <ngx-line-chart [data]="chartData">
               <svg:g
                 ngx-cartesian-grid
                 [horizontal]="true"
@@ -92,8 +92,16 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
                 stroke="#82ca9d"
               ></svg:g>
 
-              <!-- Tooltip handled internally by chart -->
             </ngx-line-chart>
+            
+            <!-- Tooltip outside SVG context -->
+            <ngx-tooltip
+              [separator]="' | '"
+              [offset]="10"
+              [snapToDataPoint]="true"
+              [isAnimationActive]="true"
+              [animationDuration]="150">
+            </ngx-tooltip>
 
             <!-- Legend positioned as overlay -->
             <ngx-legend
@@ -113,7 +121,7 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
         <h2>Bar Chart - Default Orientation (Bottom/Left)</h2>
         <div style="width: 100%; height: 500px;">
           <ngx-responsive-container [width]="'100%'" [height]="'100%'">
-            <ngx-bar-chart [data]="chartData" [tooltip]="barTooltipConfig">
+            <ngx-bar-chart [data]="chartData">
               <svg:g
                 ngx-cartesian-grid
                 strokeDasharray="5 5"
@@ -147,8 +155,14 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
                 fill="#82ca9d"
               ></svg:g>
 
-              <!-- Tooltip handled internally by chart -->
             </ngx-bar-chart>
+            
+            <!-- Tooltip outside SVG context -->
+            <ngx-tooltip
+              [separator]="' - '"
+              [offset]="15"
+              [snapToDataPoint]="false">
+            </ngx-tooltip>
 
             <!-- Legend positioned as overlay -->
             <ngx-legend
@@ -170,7 +184,6 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
             <ngx-area-chart
               [data]="chartData"
               [margin]="{ top: 10, right: 30, left: 0, bottom: 0 }"
-              [tooltip]="areaTooltipConfig"
             >
               <!-- SVG Definitions for Gradients -->
               <svg:defs>
@@ -241,7 +254,13 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
                 [fillOpacity]="1"
               ></svg:g>
 
-              <!-- Tooltip handled internally by chart -->
+              <!-- Tooltip as child component -->
+              <ngx-tooltip
+                [offset]="10"
+                [isAnimationActive]="true"
+                [animationDuration]="400"
+                [snapToDataPoint]="true">
+              </ngx-tooltip>
             </ngx-area-chart>
 
             <!-- Legend positioned outside chart -->
@@ -510,7 +529,7 @@ export class AppComponent {
     console.log('Legend hovered:', event.data.value);
   }
 
-  // Tooltip formatters - recharts API
+  // Tooltip formatters - recharts API (can be used in ngx-tooltip)
   tooltipFormatter = (
     value: any,
     name: string,
@@ -521,31 +540,5 @@ export class AppComponent {
 
   labelFormatter = (label: string, payload: any[]): string => {
     return `Category: ${label}`;
-  };
-
-  // Tooltip configurations
-  lineTooltipConfig = {
-    separator: ' : ',
-    formatter: this.tooltipFormatter,
-    labelFormatter: this.labelFormatter,
-    animationDuration: 250,
-    snapToDataPoint: true, // Snap to exact data point coordinates
-  };
-
-  barTooltipConfig = {
-    separator: ' = ',
-    contentStyle: { backgroundColor: '#f8f9fa', border: '2px solid #dee2e6' },
-    labelStyle: { fontWeight: 'bold', color: '#495057' },
-    animationDuration: 400,
-    animationEasing: 'ease' as const,
-    snapToDataPoint: false, // Follow mouse Y position
-  };
-
-  areaTooltipConfig = {
-    offset: 10,
-    isAnimationActive: true,
-    animationDuration: 400,
-    animationEasing: 'ease' as const,
-    snapToDataPoint: true, // Snap to area data points
   };
 }
