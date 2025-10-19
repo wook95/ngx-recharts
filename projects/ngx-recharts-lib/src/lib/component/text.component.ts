@@ -1,8 +1,13 @@
-import { Component, input, computed, signal, effect, ElementRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input, computed, ElementRef, inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 export type TextAnchor = 'start' | 'middle' | 'end' | 'inherit';
 export type TextVerticalAnchor = 'start' | 'middle' | 'end';
+
+interface WordWithComputedWidth {
+  word: string;
+  width: number;
+}
 
 interface WordLine {
   words: string[];
@@ -33,6 +38,8 @@ interface WordLine {
 })
 export class TextComponent {
   private elementRef = inject(ElementRef);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
 
   // Inputs
   x = input<number>(0);
@@ -70,55 +77,121 @@ export class TextComponent {
     return fillValue.includes('url') ? '#808080' : fillValue;
   });
 
-  // Word processing
+  // Word processing with proper text measurement
   wordsByLines = computed(() => {
     const text = this.children()?.toString() || '';
     const width = this.width();
+    const scaleToFit = this.scaleToFit();
     const breakAll = this.breakAll();
     const maxLines = this.maxLines();
 
     if (!text) return [];
 
-    // Simple implementation - split by spaces or characters
-    let words: string[];
-    if (breakAll) {
-      words = text.split('');
-    } else {
-      words = text.split(/\s+/);
-    }
-
-    // If no width constraint, return single line
-    if (!width) {
+    // SSR or no width constraint - simple split
+    if (!this.isBrowser || (!width && !scaleToFit)) {
+      const words = text.split(/[ \f\n\r\t\v\u2028\u2029]+/);
       return [{ words }];
     }
 
-    // Simple line breaking (would need proper text measurement in real implementation)
-    const lines: WordLine[] = [];
-    let currentLine: string[] = [];
+    // Calculate word widths
+    const wordsWithWidth = this.calculateWordWidths(text, breakAll);
+    const spaceWidth = breakAll ? 0 : this.measureText('\u00A0');
+
+    // Calculate lines (width is guaranteed to be defined here)
+    return this.calculateWordsByLines(wordsWithWidth, spaceWidth, width!, scaleToFit, maxLines);
+  });
+
+  private measureText(text: string): number {
+    if (!this.isBrowser) return text.length * 8;
     
-    for (const word of words) {
-      // Simplified: assume each character is ~8px wide
-      const estimatedWidth = (currentLine.join(' ') + ' ' + word).length * 8;
-      
-      if (estimatedWidth > width && currentLine.length > 0) {
-        lines.push({ words: currentLine });
-        currentLine = [word];
-      } else {
-        currentLine.push(word);
-      }
-      
-      // Check maxLines constraint
-      if (maxLines && lines.length >= maxLines) {
-        break;
-      }
-    }
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return text.length * 8;
     
-    if (currentLine.length > 0) {
-      lines.push({ words: currentLine });
+    // Use default font or get from element
+    context.font = '12px sans-serif';
+    return context.measureText(text).width;
+  }
+
+  private calculateWordWidths(text: string, breakAll: boolean): WordWithComputedWidth[] {
+    const words = breakAll ? text.split('') : text.split(/[ \f\n\r\t\v\u2028\u2029]+/);
+    return words.map(word => ({
+      word,
+      width: this.measureText(word)
+    }));
+  }
+
+  private calculateWordsByLines(
+    words: WordWithComputedWidth[],
+    spaceWidth: number,
+    lineWidth: number | undefined,
+    scaleToFit: boolean,
+    maxLines?: number
+  ): WordLine[] {
+    const calculate = (wordsToCalc: WordWithComputedWidth[]): WordLine[] => {
+      return wordsToCalc.reduce((result, { word, width }) => {
+        const currentLine = result[result.length - 1];
+
+        if (
+          currentLine &&
+          (scaleToFit || !lineWidth || currentLine.width! + width + spaceWidth < lineWidth)
+        ) {
+          currentLine.words.push(word);
+          currentLine.width! += width + spaceWidth;
+        } else {
+          result.push({ words: [word], width });
+        }
+
+        return result;
+      }, [] as WordLine[]);
+    };
+
+    const originalResult = calculate(words);
+
+    // No maxLines or scaleToFit - return as is
+    if (!maxLines || scaleToFit) {
+      return originalResult;
     }
 
-    return lines;
-  });
+    // Check overflow
+    const findLongestLine = (lines: WordLine[]) =>
+      lines.reduce((a, b) => (a.width! > b.width! ? a : b));
+    
+    const overflows = lineWidth
+      ? originalResult.length > maxLines || findLongestLine(originalResult).width! > lineWidth
+      : originalResult.length > maxLines;
+
+    if (!overflows) {
+      return originalResult;
+    }
+
+    // Binary search for ellipsis truncation
+    const text = this.children()?.toString() || '';
+    const suffix = '…';
+    let start = 0;
+    let end = text.length - 1;
+    let trimmedResult: WordLine[] | undefined;
+
+    while (start <= end) {
+      const middle = Math.floor((start + end) / 2);
+      const tempText = text.slice(0, middle) + suffix;
+      const tempWords = this.calculateWordWidths(tempText, this.breakAll());
+      const result = calculate(tempWords);
+
+      const doesOverflow = lineWidth
+        ? result.length > maxLines || findLongestLine(result).width! > lineWidth
+        : result.length > maxLines;
+
+      if (doesOverflow) {
+        end = middle - 1;
+      } else {
+        trimmedResult = result;
+        start = middle + 1;
+      }
+    }
+
+    return trimmedResult || originalResult;
+  }
 
   startDy = computed(() => {
     const verticalAnchor = this.verticalAnchor();
@@ -129,8 +202,10 @@ export class TextComponent {
     switch (verticalAnchor) {
       case 'start':
         return capHeight;
-      case 'middle':
-        return `calc(${(wordLines.length - 1) / 2} * -${lineHeight} + (${capHeight} / 2))`;
+      case 'middle': {
+        const offset = (wordLines.length - 1) / 2;
+        return `calc(${offset} * -${lineHeight} + (${capHeight} / 2))`;
+      }
       default: // 'end'
         return `calc(${wordLines.length - 1} * -${lineHeight})`;
     }
@@ -141,10 +216,8 @@ export class TextComponent {
     
     if (this.scaleToFit() && this.width()) {
       const firstLine = this.wordsByLines()[0];
-      if (firstLine) {
-        // Simplified scaling - would need proper text measurement
-        const estimatedLineWidth = firstLine.words.join(' ').length * 8;
-        const scale = this.width()! / estimatedLineWidth;
+      if (firstLine && firstLine.width) {
+        const scale = this.width()! / firstLine.width;
         transforms.push(`scale(${scale})`);
       }
     }
