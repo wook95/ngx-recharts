@@ -1,7 +1,9 @@
-import { Component, input, computed, inject } from '@angular/core';
+import { Component, input, computed, inject, Optional } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TextComponent, TextAnchor, TextVerticalAnchor } from './text.component';
 import { ChartLayoutService } from '../services/chart-layout.service';
+import { CartesianLabelContextService, PolarLabelContextService } from '../context/label-context.service';
+import { cartesianToTrapezoid } from '../core/label-types';
 
 export type LabelPosition = 
   | 'top' | 'left' | 'right' | 'bottom' | 'inside' | 'outside'
@@ -39,6 +41,8 @@ export interface ViewBox {
 })
 export class LabelComponent {
   private chartLayoutService = inject(ChartLayoutService);
+  private cartesianContext = inject(CartesianLabelContextService, { optional: true });
+  private polarContext = inject(PolarLabelContextService, { optional: true });
 
   // Inputs
   viewBox = input<ViewBox>();
@@ -56,10 +60,17 @@ export class LabelComponent {
   content = input<any>(); // React element or function for custom rendering
   id = input<string>(); // Unique id for SSR
 
-  // Get effective viewBox
+  // Get effective viewBox from props, context, or chart layout
   private effectiveViewBox = computed(() => {
     const explicitViewBox = this.viewBox();
     if (explicitViewBox) return explicitViewBox;
+
+    // Try to get from context (polar or cartesian)
+    const polarViewBox = this.polarContext?.getViewBox()();
+    if (polarViewBox) return polarViewBox;
+
+    const cartesianViewBox = this.cartesianContext?.getViewBox()();
+    if (cartesianViewBox) return cartesianViewBox;
 
     // Fallback to chart layout
     const chartWidth = this.chartLayoutService.chartWidth();
@@ -99,11 +110,20 @@ export class LabelComponent {
     const position = this.position();
     const offset = this.offset();
 
-    if (!viewBox || (viewBox.width === 0 && viewBox.height === 0)) {
+    if (!viewBox) {
+      return { x: 0, y: 0, textAnchor: 'middle' as TextAnchor, verticalAnchor: 'middle' as TextVerticalAnchor };
+    }
+
+    // Handle Cartesian viewBox only for now (Polar will be handled in Task 1.4)
+    if (!('width' in viewBox)) {
       return { x: 0, y: 0, textAnchor: 'middle' as TextAnchor, verticalAnchor: 'middle' as TextVerticalAnchor };
     }
 
     const { x = 0, y = 0, width = 0, height = 0 } = viewBox;
+
+    if (width === 0 && height === 0) {
+      return { x: 0, y: 0, textAnchor: 'middle' as TextAnchor, verticalAnchor: 'middle' as TextVerticalAnchor };
+    }
 
     if (typeof position === 'object' && 'x' in position) {
       return {
