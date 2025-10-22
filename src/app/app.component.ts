@@ -9,7 +9,6 @@ import { YAxisComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesia
 import { AreaChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/area-chart.component';
 import { BarChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/bar-chart.component';
 import { LineChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/line-chart.component';
-import { CellComponent } from '../../projects/ngx-recharts-lib/src/lib/component/cell.component';
 import { LabelComponent } from '../../projects/ngx-recharts-lib/src/lib/component/label.component';
 import {
   LegendComponent,
@@ -18,7 +17,6 @@ import {
 import { ResponsiveContainerComponent } from '../../projects/ngx-recharts-lib/src/lib/component/responsive-container.component';
 import { TextComponent } from '../../projects/ngx-recharts-lib/src/lib/component/text.component';
 import { TooltipComponent } from '../../projects/ngx-recharts-lib/src/lib/component/tooltip.component';
-import { TooltipDirective } from '../../projects/ngx-recharts-lib/src/lib/component/tooltip.directive';
 import {
   ChartData,
   getDataValue,
@@ -43,9 +41,7 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
     LegendComponent,
     TextComponent,
     LabelComponent,
-    CellComponent,
     TooltipComponent,
-    TooltipDirective,
   ],
   template: `
     <div class="container">
@@ -147,6 +143,8 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
                 fill="#8884d8"
                 [barIndex]="0"
                 [barCount]="2"
+                [animationBegin]="0"
+                [animationEasing]="'linear'"
               ></svg:g>
               <svg:g
                 ngx-bar

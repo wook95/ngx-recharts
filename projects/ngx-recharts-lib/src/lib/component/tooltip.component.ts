@@ -212,7 +212,7 @@ export class TooltipComponent {
     allowEscape: AllowEscapeViewBox;
   }): { x: number; y: number } {
     const isSnapping = this.snapToDataPoint();
-    
+
     if (isSnapping && viewBox) {
       // Floating-UI style: compute coords from placement
       // reference = data point, floating = tooltip
@@ -222,39 +222,29 @@ export class TooltipComponent {
         width: 0,  // point has no width
         height: 0  // point has no height
       };
-      
+
       const floating = {
         width: tooltipWidth,
         height: tooltipHeight
       };
-      
+
       // Default placement: 'bottom' (below data point)
       // bottom: y = reference.y + reference.height (= coordinate.y)
       let x = reference.x + offset;  // offset to the right
       let y = reference.y + offset;  // offset below
-      
+
       // Check if fits in viewBox
       const fitsBelow = (y + floating.height) <= (viewBox.y + viewBox.height);
-      
+
       if (!fitsBelow) {
         // Flip to 'top' placement
         y = reference.y - floating.height - offset;
       }
-      
-      console.log('🎈 Tooltip Final Position:', {
-        'coordinate.y': coordinate.y,
-        'reference.y': reference.y,
-        'offset': offset,
-        'tooltipHeight': floating.height,
-        'finalY': y,
-        'fitsBelow': fitsBelow,
-        'viewBox.y': viewBox.y,
-        'viewBox.height': viewBox.height
-      });
-      
+
+
       return { x, y };
     }
-    
+
     if (isSnapping) {
       // Fallback when no viewBox
       return {
@@ -262,7 +252,7 @@ export class TooltipComponent {
         y: coordinate.y - tooltipHeight - offset
       };
     }
-    
+
     // Normal behavior: offset from cursor
     const negativeX = coordinate.x - tooltipWidth - offset;
     const positiveX = coordinate.x + offset;

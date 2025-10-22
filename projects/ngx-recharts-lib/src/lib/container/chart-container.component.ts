@@ -1,12 +1,9 @@
 import {
-  AfterContentInit,
   ChangeDetectionStrategy,
   Component,
-  computed,
-  ContentChild,
-  ElementRef,
+  computed, ElementRef,
   inject,
-  input,
+  input
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { TooltipComponent } from '../component/tooltip.component';
@@ -104,7 +101,7 @@ import { SurfaceComponent } from './surface.component';
     `,
   ],
 })
-export class ChartContainerComponent implements AfterContentInit {
+export class ChartContainerComponent {
   private store = inject(Store);
   private layoutService = inject(ChartLayoutService);
   private _tooltipService = inject(TooltipService, { optional: true });
@@ -143,7 +140,7 @@ export class ChartContainerComponent implements AfterContentInit {
   // Merged tooltip configuration with defaults
   tooltipConfig = computed(() => {
     const serviceConfig = this._tooltipConfigService?.config() || {};
-    
+
     let offsetLeft = this.margin().left;
     let offsetTop = this.margin().top;
     if (this.responsiveService) {
@@ -326,15 +323,6 @@ export class ChartContainerComponent implements AfterContentInit {
       const uvY = plotHeight - (uvValue / maxValue) * plotHeight;
       const pvY = plotHeight - (pvValue / maxValue) * plotHeight;
 
-      console.log('📍 Y Calculation Debug:', {
-        uvValue,
-        pvValue,
-        maxValue,
-        plotHeight,
-        uvY,
-        pvY,
-        mouseY: y
-      });
 
       // Find which data point is closer to mouse Y
       const mouseRelativeY = y;
@@ -347,16 +335,6 @@ export class ChartContainerComponent implements AfterContentInit {
 
     const tooltipCoord = { x: exactX + offsetLeft, y: tooltipY };
 
-    console.log('🎯 Tooltip Position Debug:', {
-      dataIndex: clampedIndex,
-      exactX,
-      closestY: this.tooltipConfig().snapToDataPoint ? tooltipY - offsetTop : 'N/A',
-      offsetLeft,
-      offsetTop,
-      finalCoord: tooltipCoord,
-      plotWidth,
-      plotHeight
-    });
 
     if (this.currentDataIndex !== clampedIndex) {
       this.currentDataIndex = clampedIndex;
@@ -458,12 +436,4 @@ export class ChartContainerComponent implements AfterContentInit {
     }
   }
 
-  ngAfterContentInit() {
-    // Debug tooltip service state
-    if (this._tooltipService) {
-      console.log('🔧 TooltipService available');
-    } else {
-      console.log('❌ TooltipService not available');
-    }
-  }
 }
