@@ -73,8 +73,7 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
                 ngx-y-axis
                 [data]="chartData"
                 [orientation]="'right'"
-                dataKey="uv"
-                [label]="'Values'"
+                [label]="'Values (Auto)'"
               ></svg:g>
               <svg:g
                 ngx-line
@@ -93,7 +92,7 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
               ></svg:g>
 
             </ngx-line-chart>
-            
+
             <!-- Tooltip outside SVG context -->
             <ngx-tooltip
               [separator]="' | '"
@@ -137,26 +136,29 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
               ></svg:g>
               <svg:g
                 ngx-y-axis
-                dataKey="uv"
                 [data]="chartData"
                 [orientation]="'left'"
-                [label]="'Values'"
+                [label]="'Values (Auto)'"
               ></svg:g>
               <svg:g
                 ngx-bar
                 [data]="chartData"
                 dataKey="uv"
                 fill="#8884d8"
+                [barIndex]="0"
+                [barCount]="2"
               ></svg:g>
               <svg:g
                 ngx-bar
                 [data]="chartData"
                 dataKey="pv"
                 fill="#82ca9d"
+                [barIndex]="1"
+                [barCount]="2"
               ></svg:g>
 
             </ngx-bar-chart>
-            
+
             <!-- Tooltip outside SVG context -->
             <ngx-tooltip
               [separator]="' - '"
@@ -230,8 +232,7 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
                 ngx-y-axis
                 [data]="chartData"
                 [orientation]="'left'"
-                dataKey="uv"
-                [label]="'Values'"
+                [label]="'Values (Auto)'"
               ></svg:g>
 
               <!-- Multiple Area components -->

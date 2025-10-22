@@ -204,10 +204,14 @@ export class TextComponent {
         return capHeight;
       case 'middle': {
         const offset = (wordLines.length - 1) / 2;
+        if (offset === 0) return `calc(${capHeight} / 2)`;
         return `calc(${offset} * -${lineHeight} + (${capHeight} / 2))`;
       }
-      default: // 'end'
-        return `calc(${wordLines.length - 1} * -${lineHeight})`;
+      default: {
+        const lines = wordLines.length - 1;
+        if (lines === 0) return '0';
+        return `calc(${lines} * -${lineHeight})`;
+      }
     }
   });
 

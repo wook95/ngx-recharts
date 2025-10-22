@@ -42,7 +42,7 @@ import { CartesianAxisComponent } from './cartesian-axis.component';
 export class YAxisComponent {
   // Recharts YAxis API - delegate to CartesianAxis
   type = input<AxisType>('number');
-  dataKey = input<string>('uv');
+  dataKey = input<string>();
   orientation = input<AxisOrientation>('left');
   tick = input<boolean>(true);
   tickCount = input<number>(5);

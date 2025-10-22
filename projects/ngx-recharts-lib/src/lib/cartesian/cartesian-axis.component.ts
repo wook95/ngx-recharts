@@ -113,7 +113,7 @@ export class CartesianAxisComponent {
 
   // Additional inputs for axis functionality
   type = input<AxisType>('category');
-  dataKey = input<string>('name');
+  dataKey = input<string>();
   tickCount = input<number>(5);
   tickFormatter = input<(value: any) => string>();
   unit = input<string>();
@@ -175,6 +175,12 @@ export class CartesianAxisComponent {
     if (!data.length || size <= 0) return [];
 
     if (this.type() === 'category') {
+      // Category type requires dataKey
+      if (!dataKey) {
+        console.warn('Category axis requires dataKey');
+        return [];
+      }
+      
       if (chartType === 'line' || chartType === 'area') {
         // Linear scale for continuous data
         const scale = this.scaleService.createLinearScale(
@@ -193,7 +199,9 @@ export class CartesianAxisComponent {
       }
     } else {
       // Linear scale for numerical data
-      const domain = this.scaleService.getLinearDomain(data, dataKey);
+      const domain = dataKey 
+        ? this.scaleService.getLinearDomain(data, dataKey)
+        : this.scaleService.getAutoDomain(data);
       // Y-axis should be flipped (high values at top, low at bottom)
       const range: [number, number] = isHorizontal ? [0, size] : [size, 0];
       const scale = this.scaleService.createLinearScale(domain, range);

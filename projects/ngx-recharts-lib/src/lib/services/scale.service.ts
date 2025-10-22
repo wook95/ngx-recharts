@@ -41,6 +41,26 @@ export class ScaleService {
     return [domainMin, domainMax];
   }
 
+  // Auto domain calculation when no dataKey is specified
+  getAutoDomain(data: ChartData[]): [number, number] {
+    const allValues = data.flatMap(item => 
+      Object.values(item).filter(value => typeof value === 'number')
+    );
+    
+    if (allValues.length === 0) {
+      return [0, 1]; // Default domain if no numeric values found
+    }
+    
+    const min = Math.min(...allValues);
+    const max = Math.max(...allValues);
+    
+    // Include 0 in domain for better visualization (recharts behavior)
+    const domainMin = min > 0 ? 0 : min;
+    const domainMax = max < 0 ? 0 : max;
+    
+    return [domainMin, domainMax];
+  }
+
   getCategoryDomain(data: ChartData[], dataKey: string): string[] {
     return data.map(item => String(item[dataKey] || ''));
   }

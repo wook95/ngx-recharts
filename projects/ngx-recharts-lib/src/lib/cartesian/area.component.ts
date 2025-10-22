@@ -142,7 +142,8 @@ export class AreaComponent {
     if (!data.length || plotArea.width <= 0 || plotArea.height <= 0) return [];
     
     // Create scales using D3 - Area charts use linear scale for even distribution
-    const yDomain = this.scaleService.getLinearDomain(data, dataKey);
+    // Use auto domain to match Y-axis behavior when no specific dataKey is set for Y-axis
+    const yDomain = this.scaleService.getAutoDomain(data);
     
     // For Area charts, use linear scale to distribute points evenly across width
     const xScale = this.scaleService.createLinearScale([0, data.length - 1], [0, plotArea.width]);

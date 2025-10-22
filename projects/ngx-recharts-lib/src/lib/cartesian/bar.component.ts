@@ -52,6 +52,10 @@ export class BarComponent {
   strokeWidth = input<number>(0);
   hide = input<boolean>(false);
   
+  // Multi-series support
+  barIndex = input<number>(0);  // Index of this bar in the series
+  barCount = input<number>(1);  // Total number of bars in the series
+  
   // Chart dimensions
   chartWidth = input<number>(400);
   chartHeight = input<number>(300);
@@ -109,25 +113,34 @@ export class BarComponent {
     
     // Create scales using D3
     const xDomain = this.scaleService.getCategoryDomain(data, 'name');
-    const yDomain = this.scaleService.getLinearDomain(data, dataKey);
+    // Use auto domain to match Y-axis behavior when no specific dataKey is set for Y-axis
+    const yDomain = this.scaleService.getAutoDomain(data);
     
     const xScale = this.scaleService.createBandScale(xDomain, [0, plotArea.width]);
     const yScale = this.scaleService.createLinearScale(yDomain, [plotArea.height, 0]);
+    
+    const barIndex = this.barIndex();
+    const barCount = this.barCount();
     
     return data.map((item, index) => {
       const value = getNumericDataValue(item, dataKey);
       const categoryValue = String(item['name'] || '');
       
       // Use D3 scales for positioning
-      const x = xScale(categoryValue) || 0;
-      const width = xScale.bandwidth();
+      const bandX = xScale(categoryValue) || 0;
+      const bandWidth = xScale.bandwidth();
+      
+      // Calculate individual bar width and position for multi-series
+      const barWidth = bandWidth / barCount;
+      const x = bandX + (barIndex * barWidth);
+      
       const y = yScale(value);
       const height = plotArea.height - y;
       
       return {
         x: Number(x.toFixed(1)),
         y: Number(y.toFixed(1)),
-        width: Number(width.toFixed(1)),
+        width: Number(barWidth.toFixed(1)),
         height: Number(height.toFixed(1)),
         value,
         payload: item

@@ -143,19 +143,27 @@ export class ChartContainerComponent implements AfterContentInit {
   // Merged tooltip configuration with defaults
   tooltipConfig = computed(() => {
     const serviceConfig = this._tooltipConfigService?.config() || {};
+    
+    let offsetLeft = this.margin().left;
+    let offsetTop = this.margin().top;
+    if (this.responsiveService) {
+      const offset = this.responsiveService.totalOffset();
+      offsetLeft = offset.left;
+      offsetTop = offset.top;
+    }
 
     const config = {
       ...DEFAULT_TOOLTIP_CONFIG,
       ...this.tooltip(),
-      ...serviceConfig, // TooltipConfigService provides this
+      ...serviceConfig,
+      // Add viewBox for proper floating-ui positioning
+      viewBox: {
+        x: offsetLeft,
+        y: offsetTop,
+        width: this.plotWidth(),
+        height: this.plotHeight()
+      }
     };
-
-    console.log('🔧 ChartContainer final tooltip config:', {
-      separator: config.separator,
-      offset: config.offset,
-      snapToDataPoint: config.snapToDataPoint,
-      serviceConfig,
-    });
 
     return config;
   });
@@ -318,17 +326,37 @@ export class ChartContainerComponent implements AfterContentInit {
       const uvY = plotHeight - (uvValue / maxValue) * plotHeight;
       const pvY = plotHeight - (pvValue / maxValue) * plotHeight;
 
+      console.log('📍 Y Calculation Debug:', {
+        uvValue,
+        pvValue,
+        maxValue,
+        plotHeight,
+        uvY,
+        pvY,
+        mouseY: y
+      });
+
       // Find which data point is closer to mouse Y
-      const mouseRelativeY = y; // y is already relative to plot area
+      const mouseRelativeY = y;
       const uvDistance = Math.abs(mouseRelativeY - uvY);
       const pvDistance = Math.abs(mouseRelativeY - pvY);
 
       const closestY = uvDistance < pvDistance ? uvY : pvY;
-      // Pass exact data point coordinate (offset will be applied in TooltipComponent)
       tooltipY = closestY + offsetTop;
     }
 
     const tooltipCoord = { x: exactX + offsetLeft, y: tooltipY };
+
+    console.log('🎯 Tooltip Position Debug:', {
+      dataIndex: clampedIndex,
+      exactX,
+      closestY: this.tooltipConfig().snapToDataPoint ? tooltipY - offsetTop : 'N/A',
+      offsetLeft,
+      offsetTop,
+      finalCoord: tooltipCoord,
+      plotWidth,
+      plotHeight
+    });
 
     if (this.currentDataIndex !== clampedIndex) {
       this.currentDataIndex = clampedIndex;
@@ -401,12 +429,11 @@ export class ChartContainerComponent implements AfterContentInit {
       const pvY = plotHeight - (pvValue / maxValue) * plotHeight;
 
       // Find which bar value is closer to mouse Y
-      const mouseRelativeY = y; // y is already relative to plot area
+      const mouseRelativeY = y;
       const uvDistance = Math.abs(mouseRelativeY - uvY);
       const pvDistance = Math.abs(mouseRelativeY - pvY);
 
       const closestY = uvDistance < pvDistance ? uvY : pvY;
-      // Pass exact data point coordinate (offset will be applied in TooltipComponent)
       tooltipY = closestY + offsetTop;
     }
 
