@@ -7,9 +7,11 @@ import {
   output,
   effect,
   signal,
+  AfterViewInit
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ChartData, getNumericDataValue } from '../core/types';
+import { CHART_DATA } from '../context/chart-data.context';
 import { ScaleService } from '../services/scale.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { TooltipService } from '../services/tooltip.service';
@@ -119,11 +121,16 @@ export interface AreaPoint {
     }
   `
 })
-export class AreaComponent {
+export class AreaComponent implements AfterViewInit {
   private store = inject(Store);
+  private chartDataContext = inject(CHART_DATA, { optional: true });
   private scaleService = inject(ScaleService);
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
   private tooltipService = inject(TooltipService, { optional: true });
+
+  ngAfterViewInit() {
+    // No specific initialization needed yet, but required by interface
+  }
   
   // Core recharts API inputs
   dataKey = input.required<string>();
@@ -329,7 +336,10 @@ export class AreaComponent {
   
   // Computed properties
   calculatedPoints = computed(() => {
-    const data = this.data();
+    const inputData = this.data();
+    const contextData = this.chartDataContext?.data() || [];
+    const data = inputData.length > 0 ? inputData : contextData;
+
     const dataKey = this.dataKey();
     const plotArea = this.plotArea();
     const stackId = this.stackId();

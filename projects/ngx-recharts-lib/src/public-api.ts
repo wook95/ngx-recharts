@@ -16,6 +16,7 @@ export * from './lib/services/scale.service';
 export * from './lib/chart/line-chart.component';
 export * from './lib/chart/bar-chart.component';
 export * from './lib/chart/area-chart.component';
+export * from './lib/chart/composed-chart.component';
 
 // Cartesian Components
 export * from './lib/cartesian/x-axis.component';

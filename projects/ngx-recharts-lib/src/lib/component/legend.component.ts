@@ -13,7 +13,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { DefaultLegendContentComponent } from './default-legend-content.component';
 import { ResponsiveContainerComponent } from './responsive-container.component';
@@ -144,7 +143,6 @@ export class LegendComponent implements OnInit, OnDestroy {
   };
 
   // Services
-  private chartLayoutService = inject(ChartLayoutService);
   private responsiveService = inject(ResponsiveContainerService, {
     optional: true,
   });

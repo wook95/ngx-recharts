@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ChartData, getNumericDataValue } from '../core/types';
+import { CHART_DATA } from '../context/chart-data.context';
 import { ScaleService } from '../services/scale.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { TooltipService } from '../services/tooltip.service';
@@ -119,6 +120,7 @@ export interface LinePoint {
 })
 export class LineComponent implements AfterViewInit {
   private store = inject(Store);
+  private chartDataContext = inject(CHART_DATA, { optional: true });
   private scaleService = inject(ScaleService);
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
   private tooltipService = inject(TooltipService, { optional: true });
@@ -313,7 +315,10 @@ export class LineComponent implements AfterViewInit {
 
   // Computed properties with connectNulls support
   calculatedPoints = computed(() => {
-    const data = this.data();
+    const inputData = this.data();
+    const contextData = this.chartDataContext?.data() || [];
+    const data = inputData.length > 0 ? inputData : contextData;
+    
     const dataKey = this.dataKey();
     const plotArea = this.plotArea();
     const connectNulls = this.connectNulls();

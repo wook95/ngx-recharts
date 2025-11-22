@@ -1,3 +1,4 @@
+
 import {
   Component,
   input,
@@ -5,26 +6,31 @@ import {
   inject,
   ChangeDetectionStrategy,
   ContentChild,
-  effect
+  effect,
+  AfterContentInit,
+  Injector
 } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Store } from '@ngrx/store';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
 import { ChartData, ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
-import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { TooltipService } from '../services/tooltip.service';
+import { CHART_LAYOUT, useChartLayout } from '../context/chart-layout.context';
+import { CHART_DATA, useChartData } from '../context/chart-data.context';
 
 @Component({
   selector: 'ngx-area-chart',
   standalone: true,
-  imports: [
-    ChartContainerComponent,
-    RechartsWrapperComponent
-  ],
+  imports: [CommonModule, ChartContainerComponent, RechartsWrapperComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [TooltipService],
+  providers: [
+    TooltipService,
+    { provide: CHART_LAYOUT, useFactory: useChartLayout },
+    { provide: CHART_DATA, useFactory: useChartData }
+  ],
   template: `
     <ngx-recharts-wrapper
       [width]="actualWidth()"
@@ -40,27 +46,34 @@ import { TooltipService } from '../services/tooltip.service';
         <ng-content></ng-content>
       </ngx-chart-container>
     </ngx-recharts-wrapper>
-  `
+  `,
+  styles: [`
+    :host {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  `]
 })
-export class AreaChartComponent {
+export class AreaChartComponent implements AfterContentInit {
   private store = inject(Store);
-  private chartLayoutService = inject(ChartLayoutService);
-  private responsiveService = inject(ResponsiveContainerService, { optional: true });
-  
+  private chartLayout = inject(CHART_LAYOUT);
+  private chartDataContext = inject(CHART_DATA);
+  private responsiveService = inject(ResponsiveContainerService, {
+    optional: true,
+  });
+  private injector = inject(Injector);
 
   
   constructor() {
-    // Reset offsets when chart initializes
-    if (this.responsiveService) {
-      this.responsiveService.resetOffsets();
-    }
-    
-    // Effect to update margin in responsive service
+    // Chart initialization - no longer need to manage offsets
+  }
+
+  ngAfterContentInit() {
+    // Sync data to context
     effect(() => {
-      if (this.responsiveService) {
-        this.responsiveService.setMargin(this.margin());
-      }
-    });
+      this.chartDataContext.setData(this.data());
+    }, { injector: this.injector });
   }
   
   // Inputs
@@ -74,13 +87,25 @@ export class AreaChartComponent {
   
   // Use responsive dimensions if available, otherwise fall back to props
   actualWidth = computed(() => {
-    const responsiveWidth = this.responsiveService?.width() ?? 0;
-    return responsiveWidth > 0 ? responsiveWidth : this.width();
+    if (this.responsiveService) {
+      const width = this.responsiveService.width();
+      // Use ResponsiveContainer size if it's valid (> 10 to avoid tiny sizes)
+      const result = width > 10 ? width : this.width();
+
+      return result;
+    }
+    return this.width();
   });
   
   actualHeight = computed(() => {
-    const responsiveHeight = this.responsiveService?.height() ?? 0;
-    return responsiveHeight > 0 ? responsiveHeight : this.height();
+    if (this.responsiveService) {
+      const height = this.responsiveService.height();
+      // Use ResponsiveContainer size if it's valid (> 10 to avoid tiny sizes)
+      const result = height > 10 ? height : this.height();
+
+      return result;
+    }
+    return this.height();
   });
   
   // Computed plot area dimensions

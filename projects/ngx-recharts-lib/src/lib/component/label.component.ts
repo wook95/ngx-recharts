@@ -1,7 +1,7 @@
 import { Component, input, computed, inject, Optional, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TextComponent, TextAnchor, TextVerticalAnchor } from './text.component';
-import { ChartLayoutService } from '../services/chart-layout.service';
+import { CHART_LAYOUT } from '../context/chart-layout.context';
 import { CartesianLabelContextService, PolarLabelContextService } from '../context/label-context.service';
 import { cartesianToTrapezoid, isPolarViewBox, PolarViewBox } from '../core/label-types';
 import { polarToCartesian, getDeltaAngle, mathSign } from '../util/polar-utils';
@@ -45,7 +45,7 @@ export interface ViewBox {
   `
 })
 export class LabelComponent {
-  private chartLayoutService = inject(ChartLayoutService);
+  private chartLayout = inject(CHART_LAYOUT, { optional: true });
   private cartesianContext = inject(CartesianLabelContextService, { optional: true });
   private polarContext = inject(PolarLabelContextService, { optional: true });
 
@@ -94,9 +94,11 @@ export class LabelComponent {
     if (cartesianViewBox) return cartesianViewBox;
 
     // Fallback to chart layout
-    const chartWidth = this.chartLayoutService.chartWidth();
-    const chartHeight = this.chartLayoutService.chartHeight();
-    const margin = this.chartLayoutService.margin();
+    if (!this.chartLayout) return { x: 0, y: 0, width: 0, height: 0 };
+
+    const chartWidth = this.chartLayout.width();
+    const chartHeight = this.chartLayout.height();
+    const margin = this.chartLayout.margin();
 
     if (chartWidth && chartHeight) {
       return {

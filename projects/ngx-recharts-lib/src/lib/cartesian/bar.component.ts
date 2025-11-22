@@ -10,11 +10,12 @@ import {
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ChartData, getNumericDataValue } from '../core/types';
+import { CHART_DATA } from '../context/chart-data.context';
 import { ScaleService } from '../services/scale.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { TooltipService } from '../services/tooltip.service';
 
-export interface BarRect {
+export interface BarRectangle {
   x: number;
   y: number;
   width: number;
@@ -28,8 +29,8 @@ export interface BarRect {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (!hide() && bars().length > 0) {
-      @for (bar of bars(); track $index) {
+    @if (!hide() && calculatedBars().length > 0) {
+      @for (bar of calculatedBars(); track $index) {
         <!-- Background Bar -->
         @if (shouldShowBackground()) {
           <svg:rect
@@ -133,6 +134,7 @@ export interface BarRect {
 })
 export class BarComponent {
   private store = inject(Store);
+  private chartDataContext = inject(CHART_DATA, { optional: true });
   private scaleService = inject(ScaleService);
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
   private tooltipService = inject(TooltipService, { optional: true });
@@ -280,8 +282,11 @@ export class BarComponent {
   });
   
   // Computed properties
-  bars = computed(() => {
-    const data = this.stackedData();
+  calculatedBars = computed<BarRectangle[]>(() => {
+    const inputData = this.data();
+    const contextData = this.chartDataContext?.data() || [];
+    const data = inputData.length > 0 ? inputData : contextData;
+
     const dataKey = this.dataKey();
     const plotArea = this.plotArea();
     
@@ -412,7 +417,7 @@ export class BarComponent {
       plotX = tooltipX - margin.left;
     }
     
-    const bars = this.bars();
+    const bars = this.calculatedBars();
     const barIndex = this.barIndex();
     const barCount = this.barCount();
     
@@ -442,11 +447,11 @@ export class BarComponent {
   });
   
   // Label positioning and styling methods
-  getLabelX(bar: BarRect): number {
+  getLabelX(bar: BarRectangle): number {
     return bar.x + bar.width / 2;
   }
   
-  getLabelY(bar: BarRect): number {
+  getLabelY(bar: BarRectangle): number {
     const labelProps = this.labelProps();
     const position = labelProps.position || 'top';
     
@@ -492,7 +497,7 @@ export class BarComponent {
     return labelProps.fontSize || '12px';
   }
   
-  getLabelText(bar: BarRect): string {
+  getLabelText(bar: BarRectangle): string {
     const labelProps = this.labelProps();
     const formatter = labelProps.formatter;
     
