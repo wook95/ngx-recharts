@@ -6,7 +6,7 @@ import {
   effect,
   ElementRef,
   inject,
-  Injector,
+  Injectable,
   input,
   OnDestroy,
   output,
@@ -14,29 +14,18 @@ import {
   viewChild,
   AfterContentInit,
 } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { ChartLayoutService } from '../services/chart-layout.service';
-import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { CommonModule } from '@angular/common';
 import { TooltipComponent } from './tooltip.component';
 import { TooltipConfigService } from '../services/tooltip-config.service';
+import { calculateChartDimensions, getInnerDivStyle } from '../services/responsive-container-utils';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 
 
-export type Percent = string;
-
-export interface ResponsiveContainerProps {
-  width?: Percent | number;
-  height?: Percent | number;
-  minWidth?: string | number;
-  minHeight?: string | number;
-  maxHeight?: number;
-  aspect?: number;
-  debounce?: number;
-  initialDimension?: { width: number; height: number };
-}
 
 @Component({
   selector: 'ngx-responsive-container',
   standalone: true,
+  imports: [CommonModule],
   providers: [
     ResponsiveContainerService,
     TooltipConfigService,
@@ -46,192 +35,147 @@ export interface ResponsiveContainerProps {
     <div
       #containerRef
       class="recharts-responsive-container"
-      [style.width]="containerWidth()"
-      [style.height]="containerHeight()"
-      [style.min-width]="getMinWidth()"
-      [style.min-height]="getMinHeight()"
-      [style.max-height.px]="maxHeight()"
+      [style.width]="width()"
+      [style.height]="height()"
+      [style.min-width]="minWidth()"
+      [style.min-height]="minHeight()"
+      [style.max-height]="maxHeight() ? maxHeight() + 'px' : null"
     >
-      @if (calculatedSize().width > 0 && calculatedSize().height > 0) {
-      <div
-        #rechartsWrapper
-        class="recharts-wrapper"
-        [style.width.px]="calculatedSize().width"
-        [style.height.px]="calculatedSize().height"
-        [style.position]="'relative'"
-        [style.cursor]="'default'"
-      >
-        <ng-content></ng-content>
+      <div [ngStyle]="innerDivStyle()">
+        <!-- recharts 로직: 유효한 크기일 때만 children 렌더링 -->
+        @if (isAcceptableSize()) {
+          <ng-content></ng-content>
+        }
       </div>
-      }
     </div>
   `,
   styles: [
     `
       .recharts-responsive-container {
-        width: 100%;
-        height: 100%;
         position: relative;
+        cursor: default;
+        user-select: none;
       }
     `,
   ],
 })
 export class ResponsiveContainerComponent implements OnDestroy, AfterContentInit {
-  private store = inject(Store);
-  private chartLayoutService = inject(ChartLayoutService);
   private responsiveService = inject(ResponsiveContainerService);
   private tooltipConfigService = inject(TooltipConfigService);
-  private injector = inject(Injector);
   private resizeObserver?: ResizeObserver;
   
   @ContentChild(TooltipComponent) tooltipChild?: TooltipComponent;
 
   // Inputs
-  width = input<Percent | number>('100%');
-  height = input<Percent | number>('100%');
+  width = input<string | number>('100%');
+  height = input<string | number>('100%');
   minWidth = input<string | number>(0);
   minHeight = input<string | number>();
   maxHeight = input<number>();
   aspect = input<number>();
   debounce = input<number>(0);
-  initialDimension = input<{ width: number; height: number }>({
-    width: -1,
-    height: -1,
-  });
 
   // Outputs
   onResize = output<{ width: number; height: number }>();
 
   // ViewChild
   containerRef = viewChild.required<ElementRef<HTMLDivElement>>('containerRef');
-  rechartsWrapper = viewChild<ElementRef<HTMLDivElement>>('rechartsWrapper');
 
-  // Signals
-  private containerSize = signal(this.initialDimension());
+  // Internal state
+  private containerWidth = signal<number>(-1);
+  private containerHeight = signal<number>(-1);
 
-  // Computed properties
-  containerWidth = computed(() => {
-    const w = this.width();
-    return typeof w === 'number' ? `${w}px` : w;
-  });
-
-  containerHeight = computed(() => {
-    const h = this.height();
-    const aspectRatio = this.aspect();
-
-    if (aspectRatio && typeof this.width() === 'number') {
-      return `${(this.width() as number) / aspectRatio}px`;
+  // Computed dimensions using recharts logic
+  calculatedDimensions = computed(() => {
+    const containerW = this.containerWidth();
+    const containerH = this.containerHeight();
+    
+    if (containerW <= 0 || containerH <= 0) {
+      return { calculatedWidth: undefined, calculatedHeight: undefined };
     }
-
-    return typeof h === 'number' ? `${h}px` : h;
+    
+    return calculateChartDimensions(containerW, containerH, {
+      width: this.width(),
+      height: this.height(),
+      aspect: this.aspect(),
+      maxHeight: this.maxHeight(),
+    });
   });
 
-  getMinWidth = computed(() => {
-    const minW = this.minWidth();
-    return typeof minW === 'number' ? `${minW}px` : minW;
+  // Inner div style for overflow handling
+  innerDivStyle = computed(() => {
+    return getInnerDivStyle({
+      width: this.width(),
+      height: this.height(),
+    });
   });
 
-  getMinHeight = computed(() => {
-    const minH = this.minHeight();
-    return typeof minH === 'number' ? `${minH}px` : minH;
+  // recharts 호환: 유효한 크기인지 체크
+  isAcceptableSize = computed(() => {
+    const dims = this.calculatedDimensions();
+    return dims.calculatedWidth != null && dims.calculatedWidth > 0 && 
+           dims.calculatedHeight != null && dims.calculatedHeight > 0;
   });
-
-  calculatedSize = computed(() => {
-    const containerSize = this.containerSize();
-    const aspectRatio = this.aspect();
-    const maxH = this.maxHeight();
-
-    let { width, height } = containerSize;
-
-    // Apply aspect ratio if specified
-    if (aspectRatio && width > 0) {
-      height = width / aspectRatio;
-    }
-
-    // Apply max height constraint
-    if (maxH && height > maxH) {
-      height = maxH;
-      if (aspectRatio) {
-        width = height * aspectRatio;
-      }
-    }
-
-    // Apply minimum constraints
-    const minW =
-      typeof this.minWidth() === 'number' ? (this.minWidth() as number) : 0;
-    const minH =
-      typeof this.minHeight() === 'number' ? (this.minHeight() as number) : 0;
-
-    width = Math.max(width, minW);
-    height = Math.max(height, minH);
-
-    return { width: Math.round(width), height: Math.round(height) };
-  });
-
-  chartHeight = computed(() => {
-    return this.calculatedSize().height; // Use full height, Legend will overlay
-  });
-
-  // Provide wrapper element for Legend portal
-  getWrapperElement(): HTMLElement | null {
-    return this.rechartsWrapper()?.nativeElement || null;
-  }
 
   constructor() {
-    // Effect to setup resize observer
+    // Update service when dimensions change
+    effect(() => {
+      const dims = this.calculatedDimensions();
+
+      
+      // recharts 로직: 유효한 크기만 설정
+      if (this.isAcceptableSize()) {
+        console.log('✅ ResponsiveContainer setting valid size:', dims.calculatedWidth, 'x', dims.calculatedHeight);
+        this.responsiveService.setDimensions(
+          dims.calculatedWidth!,
+          dims.calculatedHeight!
+        );
+        
+        this.onResize.emit({
+          width: dims.calculatedWidth!,
+          height: dims.calculatedHeight!,
+        });
+      } else {
+        console.log('❌ ResponsiveContainer setting invalid size (-1, -1)');
+        // 유효하지 않은 크기일 때는 -1로 설정 (recharts 패턴)
+        this.responsiveService.setDimensions(-1, -1);
+      }
+    });
+
+    // Setup resize observer
     effect(() => {
       const container = this.containerRef();
       if (container) {
         this.setupResizeObserver(container.nativeElement);
       }
     });
-
-    // Effect to update responsive service when size changes
-    effect(() => {
-      const size = this.calculatedSize();
-      if (size.width > 0 && size.height > 0) {
-        this.responsiveService.setDimensions(size.width, size.height);
-        this.onResize.emit(size);
-      }
-    });
   }
 
   private setupResizeObserver(element: HTMLElement): void {
-    this.cleanupResizeObserver();
-
-    this.resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        const { width, height } = entry.contentRect;
-
-        // Apply debounce if specified
-        const debounceTime = this.debounce();
-        if (debounceTime > 0) {
-          setTimeout(() => {
-            this.updateSize(width, height);
-          }, debounceTime);
-        } else {
-          this.updateSize(width, height);
-        }
-      }
-    });
-
-    this.resizeObserver.observe(element);
-
-    // Initial size calculation
-    const rect = element.getBoundingClientRect();
-    this.updateSize(rect.width, rect.height);
-  }
-
-  private updateSize(width: number, height: number): void {
-    this.containerSize.set({ width, height });
-  }
-
-  private cleanupResizeObserver(): void {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
-      this.resizeObserver = undefined;
     }
+
+    const callback = (entries: ResizeObserverEntry[]) => {
+      const { width, height } = entries[0].contentRect;
+
+      this.containerWidth.set(Math.round(width));
+      this.containerHeight.set(Math.round(height));
+    };
+
+    this.resizeObserver = new ResizeObserver(callback);
+
+    // Get initial dimensions immediately
+    const rect = element.getBoundingClientRect();
+
+    
+    // Set initial dimensions immediately if available
+    if (rect.width > 0 && rect.height > 0) {
+      this.containerWidth.set(Math.round(rect.width));
+      this.containerHeight.set(Math.round(rect.height));
+    }
+
+    this.resizeObserver.observe(element);
   }
 
   ngAfterContentInit() {
@@ -245,14 +189,20 @@ export class ResponsiveContainerComponent implements OnDestroy, AfterContentInit
         animationDuration: this.tooltipChild.animationDuration(),
       };
       
-      console.log('🎯 ResponsiveContainer setting tooltip config:', config);
+
       this.tooltipConfigService.setConfig(config);
     } else {
-      console.log('❌ ResponsiveContainer no tooltip child found');
+
     }
   }
 
   ngOnDestroy(): void {
-    this.cleanupResizeObserver();
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+  }
+
+  getWrapperElement(): HTMLElement {
+    return this.containerRef().nativeElement;
   }
 }

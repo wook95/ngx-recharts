@@ -42,6 +42,7 @@ export class ScaleService {
   }
 
   // Auto domain calculation when no dataKey is specified
+  // This matches recharts' combineDomainOfAllAppliedNumericalValuesIncludingErrorValues logic
   getAutoDomain(data: ChartData[]): [number, number] {
     const allValues = data.flatMap(item => 
       Object.values(item).filter(value => typeof value === 'number')

@@ -8,6 +8,7 @@ import { XAxisComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesia
 import { YAxisComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/y-axis.component';
 import { AreaChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/area-chart.component';
 import { BarChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/bar-chart.component';
+import { ComposedChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/composed-chart.component';
 import { LineChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/line-chart.component';
 import { LabelComponent } from '../../projects/ngx-recharts-lib/src/lib/component/label.component';
 import {
@@ -21,7 +22,6 @@ import {
   ChartData,
   getDataValue,
 } from '../../projects/ngx-recharts-lib/src/lib/core/types';
-import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/services/chart-layout.service';
 
 @Component({
   selector: 'app-root',
@@ -32,6 +32,7 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
     LineChartComponent,
     BarChartComponent,
     AreaChartComponent,
+    ComposedChartComponent,
     BarComponent,
     LineComponent,
     AreaComponent,
@@ -276,109 +277,78 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
       </div>
 
       <div class="chart-container">
-        <h2>Text Component Demo</h2>
-        <svg width="400" height="200">
-          <svg:text
-            ngx-text
-            [x]="50"
-            [y]="50"
-            [children]="'Simple Text'"
-            fill="#333"
-          ></svg:text>
-          <svg:text
-            ngx-text
-            [x]="50"
-            [y]="80"
-            [children]="'Rotated Text'"
-            [angle]="45"
-            fill="#8884d8"
-          ></svg:text>
-          <svg:text
-            ngx-text
-            [x]="50"
-            [y]="120"
-            [children]="'Multi-line text with width constraint'"
-            [width]="150"
-            [maxLines]="2"
-            fill="#82ca9d"
-          ></svg:text>
-        </svg>
-      </div>
+        <h2>Composed Chart - Line + Bar + Area</h2>
+        <div style="width: 100%; height: 500px;">
+          <ngx-responsive-container [width]="'100%'" [height]="'100%'">
+            <ngx-composed-chart [data]="chartData">
+              <svg:g
+                ngx-cartesian-grid
+                strokeDasharray="3 3"
+                stroke="#f0f0f0"
+              ></svg:g>
+              <svg:g
+                ngx-x-axis
+                dataKey="name"
+                [data]="chartData"
+                [orientation]="'bottom'"
+                [label]="'Categories'"
+                [chartType]="'composed'"
+              ></svg:g>
+              <svg:g
+                ngx-y-axis
+                [data]="chartData"
+                [orientation]="'left'"
+                [label]="'Values'"
+                [chartType]="'composed'"
+              ></svg:g>
 
-      <div class="chart-container">
-        <h2>Label Component Demo</h2>
-        <svg width="400" height="200">
-          <ngx-label
-            [viewBox]="{ x: 50, y: 50, width: 100, height: 50 }"
-            [value]="'Center Label'"
-            [position]="'center'"
-            [fill]="'#333'"
-          ></ngx-label>
-          <ngx-label
-            [viewBox]="{ x: 200, y: 50, width: 100, height: 50 }"
-            [value]="'Top Label'"
-            [position]="'top'"
-            [fill]="'#8884d8'"
-          ></ngx-label>
-          <ngx-label
-            [viewBox]="{ x: 50, y: 120, width: 100, height: 50 }"
-            [value]="'Inside Right'"
-            [position]="'insideRight'"
-            [fill]="'#82ca9d'"
-          ></ngx-label>
-          <!-- Visual boxes to show label positions -->
-          <svg:rect
-            x="50"
-            y="50"
-            width="100"
-            height="50"
-            fill="none"
-            stroke="#ddd"
-          ></svg:rect>
-          <svg:rect
-            x="200"
-            y="50"
-            width="100"
-            height="50"
-            fill="none"
-            stroke="#ddd"
-          ></svg:rect>
-          <svg:rect
-            x="50"
-            y="120"
-            width="100"
-            height="50"
-            fill="none"
-            stroke="#ddd"
-          ></svg:rect>
-        </svg>
-      </div>
+              <!-- Area (background) -->
+              <svg:g
+                ngx-area
+                [data]="chartData"
+                dataKey="amt"
+                type="monotone"
+                stroke="#ffc658"
+                fill="#ffc658"
+                [fillOpacity]="0.3"
+              ></svg:g>
 
-      <div class="chart-container">
-        <h2>ResponsiveContainer Demo</h2>
-        <div style="width: 100%; height: 300px; border: 1px solid #ddd;">
-          <ngx-responsive-container
-            [width]="'100%'"
-            [height]="'100%'"
-            [minWidth]="200"
-            [minHeight]="150"
-          >
-            <svg width="100%" height="100%">
-              <svg:rect
-                x="10"
-                y="10"
-                width="50"
-                height="30"
-                fill="#8884d8"
-              ></svg:rect>
-              <svg:text
-                ngx-text
-                [x]="70"
-                [y]="30"
-                [children]="'Responsive Content'"
-                fill="#333"
-              ></svg:text>
-            </svg>
+              <!-- Bar (middle layer) -->
+              <svg:g
+                ngx-bar
+                [data]="chartData"
+                dataKey="pv"
+                fill="#82ca9d"
+                [barIndex]="0"
+                [barCount]="1"
+              ></svg:g>
+
+              <!-- Line (top layer) -->
+              <svg:g
+                ngx-line
+                [data]="chartData"
+                dataKey="uv"
+                stroke="#8884d8"
+                [strokeWidth]="3"
+                [activeDot]="{ r: 8 }"
+              ></svg:g>
+            </ngx-composed-chart>
+
+            <!-- Tooltip -->
+            <ngx-tooltip
+              [separator]="' | '"
+              [offset]="10"
+              [snapToDataPoint]="true">
+            </ngx-tooltip>
+
+            <!-- Legend -->
+            <ngx-legend
+              [payload]="composedChartLegend"
+              [layout]="'horizontal'"
+              [align]="'center'"
+              [verticalAlign]="'bottom'"
+            >
+            </ngx-legend>
           </ngx-responsive-container>
         </div>
       </div>
@@ -455,8 +425,6 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
   ],
 })
 export class AppComponent {
-  layoutService = inject(ChartLayoutService);
-
   chartData: ChartData[] = [
     { name: 'Page A', uv: 4000, pv: 2400, amt: 2400 },
     { name: 'Page B', uv: 3000, pv: 1398, amt: 2210 },
@@ -509,6 +477,27 @@ export class AppComponent {
       type: 'rect',
       color: '#82ca9d',
       dataKey: 'pv',
+    },
+  ];
+
+  composedChartLegend: LegendPayload[] = [
+    {
+      value: 'Amount (Area)',
+      type: 'rect',
+      color: '#ffc658',
+      dataKey: 'amt',
+    },
+    {
+      value: 'PV (Bar)',
+      type: 'rect',
+      color: '#82ca9d',
+      dataKey: 'pv',
+    },
+    {
+      value: 'UV (Line)',
+      type: 'line',
+      color: '#8884d8',
+      dataKey: 'uv',
     },
   ];
 

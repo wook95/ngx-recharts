@@ -20,6 +20,9 @@ import { CommonModule } from '@angular/common';
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+    }
     .recharts-wrapper {
       position: relative;
       cursor: default;

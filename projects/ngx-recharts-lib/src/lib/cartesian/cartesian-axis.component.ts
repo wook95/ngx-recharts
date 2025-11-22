@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { AxisOrientation, AxisType } from '../core/axis-types';
 import { ChartData } from '../core/types';
+import { CHART_LAYOUT } from '../context/chart-layout.context';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { ScaleService } from '../services/scale.service';
 import { LabelComponent } from '../component/label.component';
@@ -88,6 +89,7 @@ export interface ViewBox {
 })
 export class CartesianAxisComponent {
   private scaleService = inject(ScaleService);
+  private chartLayout = inject(CHART_LAYOUT);
   private responsiveService = inject(ResponsiveContainerService, {
     optional: true,
   });
@@ -133,13 +135,13 @@ export class CartesianAxisComponent {
   // Computed dimensions
   actualWidth = computed(() => {
     const inputWidth = this.width();
-    const plotWidth = this.responsiveService?.plotWidth() ?? 0;
+    const plotWidth = this.chartLayout.plotWidth();
     return inputWidth > 0 ? inputWidth : plotWidth > 0 ? plotWidth : 400;
   });
 
   actualHeight = computed(() => {
     const inputHeight = this.height();
-    const plotHeight = this.responsiveService?.plotHeight() ?? 0;
+    const plotHeight = this.chartLayout.plotHeight();
     return inputHeight > 0 ? inputHeight : plotHeight > 0 ? plotHeight : 300;
   });
 
@@ -199,9 +201,14 @@ export class CartesianAxisComponent {
       }
     } else {
       // Linear scale for numerical data
-      const domain = dataKey 
-        ? this.scaleService.getLinearDomain(data, dataKey)
-        : this.scaleService.getAutoDomain(data);
+      let domain: [number, number];
+      
+      if (dataKey) {
+        domain = this.scaleService.getLinearDomain(data, dataKey);
+      } else {
+        // For charts without dataKey, use all numeric values
+        domain = this.scaleService.getAutoDomain(data);
+      }
       // Y-axis should be flipped (high values at top, low at bottom)
       const range: [number, number] = isHorizontal ? [0, size] : [size, 0];
       const scale = this.scaleService.createLinearScale(domain, range);

@@ -6,6 +6,8 @@ import {
   input,
 } from '@angular/core';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { ChartContainerService } from '../container/chart-container.component';
+import { CHART_LAYOUT } from '../context/chart-layout.context';
 
 @Component({
   selector: 'svg:g[ngx-cartesian-grid]',
@@ -60,6 +62,7 @@ export class CartesianGridComponent {
   private responsiveService = inject(ResponsiveContainerService, {
     optional: true,
   });
+  private chartLayout = inject(CHART_LAYOUT);
 
   // Recharts API inputs
   x = input<number>(0);
@@ -95,17 +98,21 @@ export class CartesianGridComponent {
   xAxisId = input<string | number>(0);
   yAxisId = input<string | number>(0);
 
-  // Use plot area dimensions from responsive service
+  // Use plot area dimensions from chart container service
   actualWidth = computed(() => {
-    const plotWidth = this.responsiveService?.plotWidth() ?? 0;
+    const containerWidth = this.chartLayout.plotWidth();
     const inputWidth = this.width();
-    return plotWidth > 0 ? plotWidth : inputWidth > 0 ? inputWidth : 400;
+    const result = containerWidth > 0 ? containerWidth : inputWidth > 0 ? inputWidth : 400;
+    
+    return result;
   });
 
   actualHeight = computed(() => {
-    const plotHeight = this.responsiveService?.plotHeight() ?? 0;
+    const containerHeight = this.chartLayout.plotHeight();
     const inputHeight = this.height();
-    return plotHeight > 0 ? plotHeight : inputHeight > 0 ? inputHeight : 300;
+    const result = containerHeight > 0 ? containerHeight : inputHeight > 0 ? inputHeight : 300;
+    
+    return result;
   });
 
   // Computed grid coordinates

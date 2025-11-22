@@ -2,6 +2,7 @@ import { Component, input, output, signal, computed, inject, ElementRef, viewChi
 import { CommonModule } from '@angular/common';
 import { Store } from '@ngrx/store';
 import { setChartDimensions } from '../store/chart.state';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 
 @Component({
   selector: 'ngx-recharts-surface',
@@ -10,17 +11,18 @@ import { setChartDimensions } from '../store/chart.state';
   template: `
     <svg 
       #svgElement
-      [attr.width]="width()" 
-      [attr.height]="height()"
+      [attr.width]="actualWidth()" 
+      [attr.height]="actualHeight()"
       [attr.viewBox]="viewBox()"
-      [style.width]="'100%'"
-      [style.height]="'100%'"
       [style.display]="'block'"
       class="recharts-surface">
       <ng-content></ng-content>
     </svg>
   `,
   styles: [`
+    :host {
+      display: block;
+    }
     .recharts-surface {
       overflow: hidden;
       display: block;
@@ -29,6 +31,7 @@ import { setChartDimensions } from '../store/chart.state';
 })
 export class SurfaceComponent {
   private store = inject(Store);
+
   
   // Inputs using new signal-based inputs
   width = input<number>(0);
@@ -37,8 +40,12 @@ export class SurfaceComponent {
   // ViewChild using new signal-based viewChild
   svgElement = viewChild<ElementRef<SVGSVGElement>>('svgElement');
   
+  // Actual dimensions - use inputs directly
+  actualWidth = computed(() => this.width());
+  actualHeight = computed(() => this.height());
+
   // Computed viewBox
-  viewBox = computed(() => `0 0 ${this.width()} ${this.height()}`);
+  viewBox = computed(() => `0 0 ${this.actualWidth()} ${this.actualHeight()}`);
   
   // Output events
   dimensionsChange = output<{ width: number; height: number }>();
@@ -47,8 +54,8 @@ export class SurfaceComponent {
     // Update store when dimensions change using effect
     effect(() => {
       this.store.dispatch(setChartDimensions({ 
-        width: this.width(), 
-        height: this.height() 
+        width: this.actualWidth(), 
+        height: this.actualHeight() 
       }));
     });
   }

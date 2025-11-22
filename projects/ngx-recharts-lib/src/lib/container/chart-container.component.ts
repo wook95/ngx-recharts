@@ -1,19 +1,38 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed, ElementRef,
+  computed, 
+  effect,
+  ElementRef,
   inject,
-  input
+  Injectable,
+  input,
+  signal
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { TooltipComponent } from '../component/tooltip.component';
 import { DEFAULT_TOOLTIP_CONFIG, TooltipConfig } from '../core/tooltip-types';
 import { ChartData, ChartMargin, getNumericDataValue } from '../core/types';
-import { ChartLayoutService } from '../services/chart-layout.service';
+
+import { CHART_LAYOUT } from '../context/chart-layout.context';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { TooltipService } from '../services/tooltip.service';
 import { TooltipConfigService } from '../services/tooltip-config.service';
 import { SurfaceComponent } from './surface.component';
+
+@Injectable()
+export class ChartContainerService {
+  private _plotWidth = signal(0);
+  private _plotHeight = signal(0);
+  
+  plotWidth = this._plotWidth.asReadonly();
+  plotHeight = this._plotHeight.asReadonly();
+  
+  setPlotDimensions(width: number, height: number) {
+    this._plotWidth.set(width);
+    this._plotHeight.set(height);
+  }
+}
 
 
 
@@ -21,7 +40,7 @@ import { SurfaceComponent } from './surface.component';
   selector: 'ngx-chart-container',
   standalone: true,
   imports: [SurfaceComponent, TooltipComponent],
-
+  providers: [ChartContainerService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -83,12 +102,18 @@ import { SurfaceComponent } from './surface.component';
   `,
   styles: [
     `
+      :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
       .recharts-wrapper {
         position: relative;
         cursor: default;
         user-select: none;
+        width: 100%;
+        height: 100%;
       }
-
       .tooltip-container {
         position: absolute;
         top: 0;
@@ -103,9 +128,10 @@ import { SurfaceComponent } from './surface.component';
 })
 export class ChartContainerComponent {
   private store = inject(Store);
-  private layoutService = inject(ChartLayoutService);
+  private chartLayoutContext = inject(CHART_LAYOUT);
   private _tooltipService = inject(TooltipService, { optional: true });
   private _tooltipConfigService = inject(TooltipConfigService, { optional: true });
+  private chartContainerService = inject(ChartContainerService);
 
 
 
@@ -132,7 +158,15 @@ export class ChartContainerComponent {
   width = input<number>(400);
   height = input<number>(400);
   margin = input<ChartMargin>({ top: 5, right: 5, bottom: 5, left: 5 });
-  chartType = input<'line' | 'bar' | 'area'>('line');
+  chartType = input<'line' | 'bar' | 'area' | 'composed'>('line');
+  
+  // ComposedChart specific inputs
+  layout = input<'horizontal' | 'vertical'>('horizontal');
+  barCategoryGap = input<string | number>('10%');
+  barGap = input<number>(4);
+  barSize = input<number | undefined>(undefined);
+  reverseStackOrder = input<boolean>(false);
+  baseValue = input<number | 'dataMin' | 'dataMax' | 'auto'>('auto');
 
   // Tooltip configuration (recharts API)
   tooltip = input<TooltipConfig>({});
@@ -141,13 +175,9 @@ export class ChartContainerComponent {
   tooltipConfig = computed(() => {
     const serviceConfig = this._tooltipConfigService?.config() || {};
 
-    let offsetLeft = this.margin().left;
-    let offsetTop = this.margin().top;
-    if (this.responsiveService) {
-      const offset = this.responsiveService.totalOffset();
-      offsetLeft = offset.left;
-      offsetTop = offset.top;
-    }
+    const m = this.margin();
+    const offsetLeft = m.left;
+    const offsetTop = m.top;
 
     const config = {
       ...DEFAULT_TOOLTIP_CONFIG,
@@ -165,28 +195,75 @@ export class ChartContainerComponent {
     return config;
   });
 
-  // Computed properties
-  chartWidth = computed(() => this.width());
-  chartHeight = computed(() => this.height());
+  // Computed properties - use ResponsiveContainer context if available
+  chartWidth = computed(() => {
+    if (this.responsiveService) {
+      const width = this.responsiveService.width();
+      // Use ResponsiveContainer size if it's valid (> 10 to avoid tiny sizes)
+      const result = width > 10 ? width : this.width();
 
-  // Use responsive service plot dimensions if available
+      return result;
+    }
+    return this.width();
+  });
+
+  chartHeight = computed(() => {
+    if (this.responsiveService) {
+      const height = this.responsiveService.height();
+      // Use ResponsiveContainer size if it's valid (> 10 to avoid tiny sizes)
+      const result = height > 10 ? height : this.height();
+
+      return result;
+    }
+    return this.height();
+  });
+
   plotWidth = computed(() => {
     if (this.responsiveService) {
-      return this.responsiveService.plotWidth();
+      const offset = this.responsiveService.totalOffset();
+      const result = this.chartWidth() - offset.left - offset.right;
+      return Math.max(0, result);
     }
     const m = this.margin();
-    return this.width() - m.left - m.right;
+    const result = this.chartWidth() - m.left - m.right;
+    return result;
   });
 
   plotHeight = computed(() => {
     if (this.responsiveService) {
-      return this.responsiveService.plotHeight();
+      const offset = this.responsiveService.totalOffset();
+      const result = this.chartHeight() - offset.top - offset.bottom;
+      return Math.max(0, result);
     }
     const m = this.margin();
-    return this.height() - m.top - m.bottom;
+    const result = this.chartHeight() - m.top - m.bottom;
+    return result;
   });
 
-  // Chart transform using responsive service offset
+  // Effect to update service when dimensions change
+  private updateServiceEffect = effect(() => {
+    const width = this.chartWidth();
+    const height = this.chartHeight();
+    const plotWidth = this.plotWidth();
+    const plotHeight = this.plotHeight();
+    const margin = this.margin();
+    
+    // Sync margin to responsive service
+    if (this.responsiveService) {
+      this.responsiveService.setMargin(margin);
+    }
+    
+    // Update local container service
+    this.chartContainerService.setPlotDimensions(plotWidth, plotHeight);
+    
+    // Update shared layout context
+    this.chartLayoutContext.setDimensions(width, height);
+    this.chartLayoutContext.setPlotDimensions(plotWidth, plotHeight);
+  });
+
+
+
+  // Chart transform using margin
   chartTransform = computed(() => {
     if (this.responsiveService) {
       const offset = this.responsiveService.totalOffset();
@@ -206,14 +283,9 @@ export class ChartContainerComponent {
 
     const rect = this.elementRef.nativeElement.getBoundingClientRect();
     // Calculate mouse position relative to plot area
-    let offsetLeft = this.margin().left;
-    let offsetTop = this.margin().top;
-
-    if (this.responsiveService) {
-      const offset = this.responsiveService.totalOffset();
-      offsetLeft = offset.left;
-      offsetTop = offset.top;
-    }
+    const m = this.margin();
+    const offsetLeft = m.left;
+    const offsetTop = m.top;
 
     const x = event.clientX - rect.left - offsetLeft;
     const y = event.clientY - rect.top - offsetTop;
@@ -290,51 +362,79 @@ export class ChartContainerComponent {
 
     const exactX = (clampedIndex / Math.max(data.length - 1, 1)) * plotWidth;
     const item = data[clampedIndex];
-    const payload = [
-      {
-        dataKey: 'uv',
-        value: getNumericDataValue(item, 'uv'),
-        name: 'UV',
-        color: '#8884d8',
-        payload: item,
-      },
-      {
-        dataKey: 'pv',
-        value: getNumericDataValue(item, 'pv'),
-        name: 'PV',
-        color: '#82ca9d',
-        payload: item,
-      },
-    ];
+    
+    // For ComposedChart, include all data keys
+    const chartType = this.chartType();
+    let payload: any[];
+    
+    if (chartType === 'composed') {
+      payload = [
+        {
+          dataKey: 'amt',
+          value: getNumericDataValue(item, 'amt'),
+          name: 'Amount',
+          color: '#ffc658',
+          payload: item,
+        },
+        {
+          dataKey: 'pv',
+          value: getNumericDataValue(item, 'pv'),
+          name: 'PV',
+          color: '#82ca9d',
+          payload: item,
+        },
+        {
+          dataKey: 'uv',
+          value: getNumericDataValue(item, 'uv'),
+          name: 'UV',
+          color: '#8884d8',
+          payload: item,
+        },
+      ];
+    } else {
+      payload = [
+        {
+          dataKey: 'uv',
+          value: getNumericDataValue(item, 'uv'),
+          name: 'UV',
+          color: '#8884d8',
+          payload: item,
+        },
+        {
+          dataKey: 'pv',
+          value: getNumericDataValue(item, 'pv'),
+          name: 'PV',
+          color: '#82ca9d',
+          payload: item,
+        },
+      ];
+    }
 
     let tooltipY = event.clientY - rect.top;
 
     // Snap to closest data point Y coordinate if enabled
     if (this.tooltipConfig().snapToDataPoint) {
-      const uvValue = getNumericDataValue(item, 'uv');
-      const pvValue = getNumericDataValue(item, 'pv');
-      const maxValue = Math.max(
-        ...data.map((d) =>
-          Math.max(getNumericDataValue(d, 'uv'), getNumericDataValue(d, 'pv'))
-        )
+      // Calculate max value from all numeric data for proper scaling
+      const allValues = data.flatMap(d => 
+        Object.values(d).filter(v => typeof v === 'number') as number[]
       );
+      const maxValue = Math.max(...allValues);
 
-      // Calculate Y positions for both data points
-      const uvY = plotHeight - (uvValue / maxValue) * plotHeight;
-      const pvY = plotHeight - (pvValue / maxValue) * plotHeight;
-
+      // Calculate Y positions for data points
+      const dataValues = payload.map(p => p.value);
+      const dataYPositions = dataValues.map(value => 
+        plotHeight - (value / maxValue) * plotHeight
+      );
 
       // Find which data point is closer to mouse Y
       const mouseRelativeY = y;
-      const uvDistance = Math.abs(mouseRelativeY - uvY);
-      const pvDistance = Math.abs(mouseRelativeY - pvY);
-
-      const closestY = uvDistance < pvDistance ? uvY : pvY;
+      const distances = dataYPositions.map(yPos => Math.abs(mouseRelativeY - yPos));
+      const closestIndex = distances.indexOf(Math.min(...distances));
+      const closestY = dataYPositions[closestIndex];
       tooltipY = closestY + offsetTop;
     }
 
     const tooltipCoord = { x: exactX + offsetLeft, y: tooltipY };
-
 
     if (this.currentDataIndex !== clampedIndex) {
       this.currentDataIndex = clampedIndex;
