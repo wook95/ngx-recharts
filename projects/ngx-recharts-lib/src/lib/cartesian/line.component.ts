@@ -2,14 +2,19 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
+  OnDestroy,
 } from '@angular/core';
-import { Store } from '@ngrx/store';
+import { line as d3Line, curveLinear, curveMonotoneX, curveCardinal, curveBasis, curveStep, curveStepBefore, curveStepAfter, curveBasisClosed, curveBasisOpen, curveLinearClosed, curveBumpX, curveBumpY, curveNatural, curveMonotoneY } from 'd3-shape';
 import { ChartData, getNumericDataValue } from '../core/types';
 import { ScaleService } from '../services/scale.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
+import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
+import { createChartDimensions } from '../shared/chart-dimensions';
+import { ChartDataService } from '../services/chart-data.service';
 
 export interface LinePoint {
   x: number;
@@ -32,6 +37,7 @@ export interface LinePoint {
         [attr.stroke-width]="strokeWidth()"
         [attr.stroke-dasharray]="strokeDasharray()"
         [attr.fill]="fill()"
+        [style]="animationStyle()"
         stroke-linejoin="round"
         stroke-linecap="round"
         (click)="handleClick($event)"
@@ -42,7 +48,7 @@ export interface LinePoint {
         (mouseout)="handleMouseOut($event)"
         (mouseenter)="handleMouseEnter($event)"
         (mouseleave)="handleMouseLeave($event)" />
-      
+
       <!-- Regular Dots -->
       @if (shouldShowDots()) {
         @for (point of finalPoints(); track $index) {
@@ -56,7 +62,7 @@ export interface LinePoint {
             [attr.stroke-width]="dotProps().strokeWidth || 1" />
         }
       }
-      
+
       <!-- Active Dot (shown when tooltip is active) -->
       @if (shouldShowActiveDot() && activePointIndex() !== -1) {
         @let activePoint = finalPoints()[activePointIndex()];
@@ -74,90 +80,116 @@ export interface LinePoint {
     }
   `,
 })
-export class LineComponent {
-  private store = inject(Store);
+export class LineComponent implements OnDestroy {
   private scaleService = inject(ScaleService);
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
   private tooltipService = inject(CHART_TOOLTIP_SERVICE, { optional: true });
+  private registryService = inject(GraphicalItemRegistryService, { optional: true });
+  private chartDataService = inject(ChartDataService, { optional: true });
+
+  private static nextId = 0;
+  private readonly itemId = `line-${LineComponent.nextId++}`;
+
+  constructor() {
+    effect(() => {
+      this.registryService?.replace(this.itemId, {
+        id: this.itemId,
+        type: 'line',
+        dataKey: this.dataKey(),
+        name: this.name()?.toString(),
+        stroke: this.stroke(),
+        xAxisId: this.xAxisId(),
+        yAxisId: this.yAxisId(),
+        hide: this.hide(),
+        strokeWidth: typeof this.strokeWidth() === 'number'
+          ? this.strokeWidth() as number
+          : parseInt(this.strokeWidth() as string, 10) || 1,
+      });
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.registryService?.unregister(this.itemId);
+  }
 
   // Core recharts API inputs
   dataKey = input.required<string>();
   data = input<ChartData[]>([]);
-  
+
   // Interpolation type
-  type = input<'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' | Function>('linear');
-  
+  type = input<'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' | ((context: any) => any)>('linear');
+
   // Axis IDs
   xAxisId = input<string | number>(0);
   yAxisId = input<string | number>(0);
-  
+
   // Legend
   legendType = input<'line' | 'plainline' | 'square' | 'rect' | 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'>('line');
-  
+
   // Dot configuration
   dot = input<boolean | Record<string, any> | any>(true);
   activeDot = input<boolean | Record<string, any> | any>(true);
-  
+
   // Label configuration
   label = input<boolean | Record<string, any> | any>(false);
-  
+
   // Visibility
   hide = input<boolean>(false);
-  
+
   // Points (usually calculated internally)
   points = input<LinePoint[]>([]);
-  
+
   // Styling
   stroke = input<string>('#3182bd');
   strokeWidth = input<string | number>(1);
   strokeDasharray = input<string | undefined>(undefined);
   fill = input<string>('none');
-  
+
   // Layout
   layout = input<'horizontal' | 'vertical'>('horizontal');
-  
+
   // Data connection
   connectNulls = input<boolean>(false);
-  
+
+  // Category key for band scale lookup
+  categoryKey = input<string>('name');
+
   // Tooltip/Legend data
   unit = input<string | number | undefined>(undefined);
   name = input<string | number | undefined>(undefined);
-  
+
   // Animation
   isAnimationActive = input<boolean>(true);
   animationBegin = input<number>(0);
   animationDuration = input<number>(1500);
   animationEasing = input<'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'>('ease');
-  
+
+  animationStyle = computed(() => {
+    if (!this.isAnimationActive()) return {};
+    const delay = `${this.animationBegin()}ms`;
+    const duration = `${this.animationDuration()}ms`;
+    const easing = this.animationEasing();
+    return { transition: `all ${duration} ${easing} ${delay}` };
+  });
+
   // Unique ID
   id = input<string | undefined>(undefined);
-  
+
   // Event handlers
-  onAnimationStart = input<Function | undefined>(undefined);
-  onAnimationEnd = input<Function | undefined>(undefined);
-  onClick = input<Function | undefined>(undefined);
-  onMouseDown = input<Function | undefined>(undefined);
-  onMouseUp = input<Function | undefined>(undefined);
-  onMouseMove = input<Function | undefined>(undefined);
-  onMouseOver = input<Function | undefined>(undefined);
-  onMouseOut = input<Function | undefined>(undefined);
-  onMouseEnter = input<Function | undefined>(undefined);
-  onMouseLeave = input<Function | undefined>(undefined);
+  onAnimationStart = input<(() => void) | undefined>(undefined);
+  onAnimationEnd = input<(() => void) | undefined>(undefined);
+  onClick = input<((event: Event) => void) | undefined>(undefined);
+  onMouseDown = input<((event: MouseEvent) => void) | undefined>(undefined);
+  onMouseUp = input<((event: MouseEvent) => void) | undefined>(undefined);
+  onMouseMove = input<((event: MouseEvent) => void) | undefined>(undefined);
+  onMouseOver = input<((event: MouseEvent) => void) | undefined>(undefined);
+  onMouseOut = input<((event: MouseEvent) => void) | undefined>(undefined);
+  onMouseEnter = input<((event: MouseEvent) => void) | undefined>(undefined);
+  onMouseLeave = input<((event: MouseEvent) => void) | undefined>(undefined);
 
   // Chart dimensions
   chartWidth = input<number>(400);
   chartHeight = input<number>(300);
-
-  // Use responsive dimensions if available
-  actualWidth = computed(() => {
-    const responsiveWidth = this.responsiveService?.width() ?? 0;
-    return responsiveWidth > 0 ? responsiveWidth : this.chartWidth();
-  });
-  
-  actualHeight = computed(() => {
-    const responsiveHeight = this.responsiveService?.height() ?? 0;
-    return responsiveHeight > 0 ? responsiveHeight : this.chartHeight();
-  });
 
   // Chart margins
   margin = input<{ top: number; right: number; bottom: number; left: number }>({
@@ -167,53 +199,62 @@ export class LineComponent {
     left: 40,
   });
 
-  // Plot area calculation - use responsive service plot area if available
-  plotArea = computed(() => {
-    const plotWidth = this.responsiveService?.plotWidth() ?? 0;
-    const plotHeight = this.responsiveService?.plotHeight() ?? 0;
-    
-    if (plotWidth > 0 && plotHeight > 0) {
-      return {
-        width: plotWidth,
-        height: plotHeight,
-        x: 0,
-        y: 0,
-      };
-    }
-    
-    // Fallback to manual calculation
-    const margin = this.margin();
-    const width = this.actualWidth();
-    const height = this.actualHeight();
+  private dims = createChartDimensions(
+    this.responsiveService,
+    this.chartWidth,
+    this.chartHeight,
+    this.margin
+  );
 
-    return {
-      width: width - margin.left - margin.right,
-      height: height - margin.top - margin.bottom,
-      x: margin.left,
-      y: margin.top,
-    };
+  actualWidth = this.dims.actualWidth;
+  actualHeight = this.dims.actualHeight;
+  plotArea = this.dims.plotArea;
+
+  resolvedData = computed(() => {
+    const explicit = this.data();
+    return explicit.length > 0 ? explicit : (this.chartDataService?.data() ?? []);
   });
 
   // Computed properties
   calculatedPoints = computed(() => {
-    const data = this.data();
+    const data = this.resolvedData();
     const dataKey = this.dataKey();
     const plotArea = this.plotArea();
 
     if (!data.length || plotArea.width <= 0 || plotArea.height <= 0) return [];
 
-    // Create scales using D3 - Line charts use linear scale for even distribution
-    const yDomain = this.scaleService.getLinearDomain(data, dataKey as string);
-    
-    // For Line charts, use linear scale to distribute points evenly across width
-    const xScale = this.scaleService.createLinearScale([0, data.length - 1], [0, plotArea.width]);
+    const yDomain = this.chartDataService?.unifiedYDomain()
+      ?? this.scaleService.getLinearDomain(data, dataKey as string);
     const yScale = this.scaleService.createLinearScale(yDomain, [plotArea.height, 0]);
+
+    // Check if we are in a ComposedChart with bars -- use band-center positioning
+    const hasBars = this.registryService && this.registryService.getItemsByType('bar').length > 0;
+
+    // Create scale once outside the loop
+    const ck = this.registryService?.categoryKey() ?? this.categoryKey();
+    const xScale = hasBars
+      ? null
+      : this.scaleService.createLinearScale([0, data.length - 1], [0, plotArea.width]);
+    const bandScale = hasBars
+      ? this.scaleService.createBandScale(
+          data.map(d => String(d[ck] || '')),
+          [0, plotArea.width]
+        )
+      : null;
 
     return data.map((item, index) => {
       const value = getNumericDataValue(item, dataKey as string);
-      
-      // Use index-based positioning for even distribution
-      const x = xScale(index);
+
+      let x: number;
+      if (bandScale) {
+        // ComposedChart with bars: position at band center
+        const bandX = bandScale(String(item[ck] || '')) ?? 0;
+        x = bandX + bandScale.bandwidth() / 2;
+      } else {
+        // Standalone LineChart or ComposedChart without bars: linear scale
+        x = xScale!(index);
+      }
+
       const y = yScale(value);
 
       return {
@@ -231,44 +272,37 @@ export class LineComponent {
     return providedPoints.length > 0 ? providedPoints : this.calculatedPoints();
   });
 
+  private getCurveFunction() {
+    const type = this.type();
+    switch (type) {
+      case 'basis': return curveBasis;
+      case 'basisClosed': return curveBasisClosed;
+      case 'basisOpen': return curveBasisOpen;
+      case 'bumpX': return curveBumpX;
+      case 'bumpY': return curveBumpY;
+      case 'bump': return curveBumpX;
+      case 'linearClosed': return curveLinearClosed;
+      case 'natural': return curveNatural;
+      case 'monotoneX': return curveMonotoneX;
+      case 'monotoneY': return curveMonotoneY;
+      case 'monotone': return curveMonotoneX;
+      case 'step': return curveStep;
+      case 'stepBefore': return curveStepBefore;
+      case 'stepAfter': return curveStepAfter;
+      default: return curveLinear;
+    }
+  }
+
   linePath = computed(() => {
     const points = this.finalPoints();
     if (points.length === 0) return '';
-
-    // Start path
-    let path = `M ${points[0].x},${points[0].y}`;
-
-    // Add line segments based on interpolation type
-    const interpolationType = this.type();
-    
-    if (interpolationType === 'step') {
-      // Step interpolation
-      for (let i = 1; i < points.length; i++) {
-        const prevPoint = points[i - 1];
-        const currPoint = points[i];
-        path += ` L ${currPoint.x},${prevPoint.y} L ${currPoint.x},${currPoint.y}`;
-      }
-    } else if (interpolationType === 'stepBefore') {
-      // Step before interpolation
-      for (let i = 1; i < points.length; i++) {
-        const currPoint = points[i];
-        path += ` L ${currPoint.x},${points[i-1].y} L ${currPoint.x},${currPoint.y}`;
-      }
-    } else if (interpolationType === 'stepAfter') {
-      // Step after interpolation
-      for (let i = 1; i < points.length; i++) {
-        const prevPoint = points[i - 1];
-        const currPoint = points[i];
-        path += ` L ${prevPoint.x},${currPoint.y} L ${currPoint.x},${currPoint.y}`;
-      }
-    } else {
-      // Linear and other interpolations (default to linear for now)
-      for (let i = 1; i < points.length; i++) {
-        path += ` L ${points[i].x},${points[i].y}`;
-      }
-    }
-
-    return path;
+    const curveType = this.type();
+    const curveFn = typeof curveType === 'function' ? curveType : this.getCurveFunction();
+    const line = d3Line<LinePoint>()
+      .x(d => d.x)
+      .y(d => d.y)
+      .curve(curveFn);
+    return line(points) || '';
   });
 
   // Dot configuration
@@ -301,39 +335,22 @@ export class LineComponent {
 
   // Active point index from tooltip service
   activePointIndex = computed(() => {
-    console.log('🔍 DI Debug:', {
-      tooltipService: this.tooltipService,
-      hasService: !!this.tooltipService,
-      dataKey: this.dataKey()
-    });
-    
     if (!this.tooltipService) {
-      console.log('🔍 No tooltip service via InjectionToken');
       return -1;
     }
-    
+
     const isActive = this.tooltipService.active();
     if (!isActive) {
-      console.log('🔍 Tooltip not active');
       return -1;
     }
-    
-    // Find the closest point to the tooltip coordinate
+
     const points = this.finalPoints();
     const tooltipCoordinate = this.tooltipService.coordinate();
     const tooltipX = tooltipCoordinate.x;
-    
-    console.log('🔍 ActiveDot calculation via InjectionToken:', {
-      dataKey: this.dataKey(),
-      isActive,
-      tooltipX,
-      pointsCount: points.length,
-      points: points.map(p => ({ x: p.x, y: p.y })),
-    });
-    
+
     let closestIndex = -1;
     let minDistance = Infinity;
-    
+
     points.forEach((point, index) => {
       const distance = Math.abs(point.x - tooltipX);
       if (distance < minDistance) {
@@ -341,8 +358,7 @@ export class LineComponent {
         closestIndex = index;
       }
     });
-    
-    console.log('🔍 Closest index:', closestIndex, 'minDistance:', minDistance);
+
     return closestIndex;
   });
 
@@ -352,37 +368,37 @@ export class LineComponent {
     if (handler) handler(event);
   }
 
-  handleMouseDown(event: Event) {
+  handleMouseDown(event: MouseEvent) {
     const handler = this.onMouseDown();
     if (handler) handler(event);
   }
 
-  handleMouseUp(event: Event) {
+  handleMouseUp(event: MouseEvent) {
     const handler = this.onMouseUp();
     if (handler) handler(event);
   }
 
-  handleMouseMove(event: Event) {
+  handleMouseMove(event: MouseEvent) {
     const handler = this.onMouseMove();
     if (handler) handler(event);
   }
 
-  handleMouseOver(event: Event) {
+  handleMouseOver(event: MouseEvent) {
     const handler = this.onMouseOver();
     if (handler) handler(event);
   }
 
-  handleMouseOut(event: Event) {
+  handleMouseOut(event: MouseEvent) {
     const handler = this.onMouseOut();
     if (handler) handler(event);
   }
 
-  handleMouseEnter(event: Event) {
+  handleMouseEnter(event: MouseEvent) {
     const handler = this.onMouseEnter();
     if (handler) handler(event);
   }
 
-  handleMouseLeave(event: Event) {
+  handleMouseLeave(event: MouseEvent) {
     const handler = this.onMouseLeave();
     if (handler) handler(event);
   }

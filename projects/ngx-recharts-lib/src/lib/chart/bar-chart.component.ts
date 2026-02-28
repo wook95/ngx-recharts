@@ -4,23 +4,18 @@ import {
   computed,
   inject,
   ChangeDetectionStrategy,
-  ContentChildren,
-  QueryList,
-  AfterContentInit,
   effect
 } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { chartActions } from '../store/chart.state';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
-import { XAxisComponent } from '../cartesian/x-axis.component';
-import { YAxisComponent } from '../cartesian/y-axis.component';
-import { BarComponent } from '../cartesian/bar.component';
-import { CartesianGridComponent } from '../cartesian/cartesian-grid.component';
 import { ChartData, ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
+import { TooltipService } from '../services/tooltip.service';
+import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
+import { ChartDataService, YDomainMode } from '../services/chart-data.service';
 
 @Component({
   selector: 'ngx-bar-chart',
@@ -30,6 +25,16 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
     RechartsWrapperComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    ChartLayoutService, // deprecated: retained for LabelComponent/SurfaceComponent backward compat
+    TooltipService,
+    GraphicalItemRegistryService,
+    ChartDataService,
+    {
+      provide: CHART_TOOLTIP_SERVICE,
+      useExisting: TooltipService,
+    },
+  ],
   template: `
     <ngx-recharts-wrapper
       [width]="actualWidth()"
@@ -47,33 +52,36 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
     </ngx-recharts-wrapper>
   `
 })
-export class BarChartComponent implements AfterContentInit {
-  private store = inject(Store);
-  private chartLayoutService = inject(ChartLayoutService);
+export class BarChartComponent {
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
-  
+  private chartDataService = inject(ChartDataService);
+
   constructor() {
     // Reset offsets when chart initializes
     if (this.responsiveService) {
       this.responsiveService.resetOffsets();
     }
-    
+
     // Effect to update margin in responsive service
     effect(() => {
       if (this.responsiveService) {
         this.responsiveService.setMargin(this.margin());
       }
     });
+
+    this.chartDataService.setChartType('bar');
+
+    effect(() => {
+      this.chartDataService.setData(this.data());
+      this.chartDataService.setMargin(this.margin());
+      this.chartDataService.setYDomainMode(this.yDomainMode());
+    });
   }
-  
-  @ContentChildren(BarComponent) bars!: QueryList<BarComponent>;
-  @ContentChildren(XAxisComponent) xAxes!: QueryList<XAxisComponent>;
-  @ContentChildren(YAxisComponent) yAxes!: QueryList<YAxisComponent>;
-  @ContentChildren(CartesianGridComponent) grids!: QueryList<CartesianGridComponent>;
-  
+
   // Inputs
   data = input.required<ChartData[]>();
   dataKey = input<string>('value');
+  yDomainMode = input<YDomainMode>('unified');
   width = input<number>(600);
   height = input<number>(400);
   margin = input<ChartMargin>({ top: 10, right: 5, bottom: 5, left: 5 });
@@ -105,11 +113,4 @@ export class BarChartComponent implements AfterContentInit {
     const m = this.margin();
     return this.actualHeight() - m.top - m.bottom;
   });
-  
-  ngAfterContentInit() {
-    // Configure child components with chart data and dimensions
-    this.bars.forEach(bar => {
-      // Pass chart data and dimensions to each bar
-    });
-  }
 }

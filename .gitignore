@@ -37,6 +37,20 @@ yarn-error.log
 testem.log
 /typings
 
+# Storybook
+storybook-static/
+
+# Playwright / E2E
+playwright-report/
+test-results/
+e2e/screenshots/
+
+# OMC state
+.omc/
+
+# Serena
+.serena/
+
 # System files
 .DS_Store
 Thumbs.db

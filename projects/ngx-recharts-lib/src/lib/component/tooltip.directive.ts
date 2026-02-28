@@ -31,10 +31,6 @@ export class TooltipDirective implements OnInit, OnDestroy {
   
   private tooltipElement?: HTMLElement;
   
-  constructor() {
-    console.log('🎯 TooltipDirective created with service access');
-  }
-  
   ngOnInit() {
     // Create tooltip element
     this.createTooltipElement();

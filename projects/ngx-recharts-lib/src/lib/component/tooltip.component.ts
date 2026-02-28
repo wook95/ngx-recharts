@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  afterRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -106,6 +107,19 @@ export interface TooltipPayload {
 })
 export class TooltipComponent {
   private elementRef = inject(ElementRef);
+
+  constructor() {
+    afterRender(() => {
+      const el = this.elementRef.nativeElement.querySelector('.recharts-default-tooltip');
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          this.tooltipWidth = rect.width;
+          this.tooltipHeight = rect.height;
+        }
+      }
+    });
+  }
 
   // Core recharts API inputs (can be overridden by service)
   active = input<boolean>(false);

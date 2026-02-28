@@ -1,10 +1,11 @@
-import { Component, input, computed, signal, ElementRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, computed, signal, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'ngx-recharts-wrapper',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div 
       class="recharts-wrapper"

@@ -30,14 +30,18 @@ export class ScaleService {
 
   // Extract domain from data
   getLinearDomain(data: ChartData[], dataKey: string): [number, number] {
+    if (data.length === 0) return [0, 0];
     const values = data.map(item => getNumericDataValue(item, dataKey));
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    
+    let min = values[0], max = values[0];
+    for (const v of values) {
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+
     // Include 0 in domain for better visualization (recharts behavior)
     const domainMin = min > 0 ? 0 : min;
     const domainMax = max < 0 ? 0 : max;
-    
+
     return [domainMin, domainMax];
   }
 

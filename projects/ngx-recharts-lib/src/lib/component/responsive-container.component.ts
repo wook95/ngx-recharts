@@ -12,8 +12,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 
 export type Percent = string;
@@ -69,11 +67,10 @@ export interface ResponsiveContainerProps {
   ],
 })
 export class ResponsiveContainerComponent implements OnDestroy {
-  private store = inject(Store);
-  private chartLayoutService = inject(ChartLayoutService);
   private responsiveService = inject(ResponsiveContainerService);
   private injector = inject(Injector);
   private resizeObserver?: ResizeObserver;
+  private debounceTimer?: ReturnType<typeof setTimeout>;
 
   // Inputs
   width = input<Percent | number>('100%');
@@ -196,7 +193,8 @@ export class ResponsiveContainerComponent implements OnDestroy {
         // Apply debounce if specified
         const debounceTime = this.debounce();
         if (debounceTime > 0) {
-          setTimeout(() => {
+          clearTimeout(this.debounceTimer);
+          this.debounceTimer = setTimeout(() => {
             this.updateSize(width, height);
           }, debounceTime);
         } else {
@@ -225,5 +223,6 @@ export class ResponsiveContainerComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.cleanupResizeObserver();
+    clearTimeout(this.debounceTimer);
   }
 }

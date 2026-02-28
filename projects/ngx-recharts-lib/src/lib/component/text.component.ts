@@ -1,5 +1,4 @@
-import { Component, input, computed, signal, effect, ElementRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, input, computed, signal, effect, ElementRef, inject } from '@angular/core';
 
 export type TextAnchor = 'start' | 'middle' | 'end' | 'inherit';
 export type TextVerticalAnchor = 'start' | 'middle' | 'end';
@@ -12,15 +11,16 @@ interface WordLine {
 @Component({
   selector: 'svg:text[ngx-text]',
   standalone: true,
-  imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:tspan 
-      *ngFor="let line of wordsByLines(); let i = index"
-      [attr.x]="finalX()"
-      [attr.dy]="i === 0 ? startDy() : lineHeight()"
-      [attr.key]="line.words.join(breakAll() ? '' : ' ') + '-' + i">
-      {{ line.words.join(breakAll() ? '' : ' ') }}
-    </svg:tspan>
+    @for (line of wordsByLines(); track $index; let i = $index) {
+      <svg:tspan
+        [attr.x]="finalX()"
+        [attr.dy]="i === 0 ? startDy() : lineHeight()"
+        [attr.key]="line.words.join(breakAll() ? '' : ' ') + '-' + i">
+        {{ line.words.join(breakAll() ? '' : ' ') }}
+      </svg:tspan>
+    }
   `,
   host: {
     '[attr.x]': 'finalX()',

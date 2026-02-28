@@ -53,7 +53,7 @@ export class XAxisComponent {
   data = input<ChartData[]>([]);
   tickMargin = input<number>(2);
   chartType = input<'line' | 'area' | 'bar' | 'composed'>('bar');
-  
+
   // CartesianAxis specific properties
   axisLine = input<boolean | object>(true);
   tickLine = input<boolean | object>(true);

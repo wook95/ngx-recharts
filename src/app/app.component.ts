@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { AreaComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/area.component';
 import { BarComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/bar.component';
 import { CartesianGridComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesian/cartesian-grid.component';
@@ -9,7 +9,6 @@ import { YAxisComponent } from '../../projects/ngx-recharts-lib/src/lib/cartesia
 import { AreaChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/area-chart.component';
 import { BarChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/bar-chart.component';
 import { LineChartComponent } from '../../projects/ngx-recharts-lib/src/lib/chart/line-chart.component';
-import { CellComponent } from '../../projects/ngx-recharts-lib/src/lib/component/cell.component';
 import { LabelComponent } from '../../projects/ngx-recharts-lib/src/lib/component/label.component';
 import {
   LegendComponent,
@@ -17,14 +16,10 @@ import {
 } from '../../projects/ngx-recharts-lib/src/lib/component/legend.component';
 import { ResponsiveContainerComponent } from '../../projects/ngx-recharts-lib/src/lib/component/responsive-container.component';
 import { TextComponent } from '../../projects/ngx-recharts-lib/src/lib/component/text.component';
-import { TooltipComponent } from '../../projects/ngx-recharts-lib/src/lib/component/tooltip.component';
-import { TooltipDirective } from '../../projects/ngx-recharts-lib/src/lib/component/tooltip.directive';
 import {
   ChartData,
   getDataValue,
 } from '../../projects/ngx-recharts-lib/src/lib/core/types';
-import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/services/chart-layout.service';
-
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -43,9 +38,6 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
     LegendComponent,
     TextComponent,
     LabelComponent,
-    CellComponent,
-    TooltipComponent,
-    TooltipDirective,
   ],
   template: `
     <div class="container">
@@ -101,8 +93,6 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
               [layout]="'horizontal'"
               [align]="'center'"
               [verticalAlign]="'bottom'"
-              (legendClick)="onLegendClick($event)"
-              (legendMouseEnter)="onLegendHover($event)"
             >
             </ngx-legend>
           </ngx-responsive-container>
@@ -156,7 +146,6 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
               [layout]="'horizontal'"
               [align]="'center'"
               [verticalAlign]="'bottom'"
-              (legendClick)="onLegendClick($event)"
             >
             </ngx-legend>
           </ngx-responsive-container>
@@ -250,7 +239,6 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
               [layout]="'horizontal'"
               [align]="'center'"
               [verticalAlign]="'bottom'"
-              (legendClick)="onLegendClick($event)"
             >
             </ngx-legend>
           </ngx-responsive-container>
@@ -437,8 +425,6 @@ import { ChartLayoutService } from '../../projects/ngx-recharts-lib/src/lib/serv
   ],
 })
 export class AppComponent {
-  layoutService = inject(ChartLayoutService);
-
   chartData: ChartData[] = [
     { name: 'Page A', uv: 4000, pv: 2400, amt: 2400 },
     { name: 'Page B', uv: 3000, pv: 1398, amt: 2210 },
@@ -499,15 +485,6 @@ export class AppComponent {
       .slice(0, 3)
       .map((d) => getDataValue(d, 'uv'))
       .join(', ');
-  }
-
-  // Legend event handlers - Angular style
-  onLegendClick(event: { data: any; index: number; event: MouseEvent }) {
-    console.log('Legend clicked:', event.data.value, event.index);
-  }
-
-  onLegendHover(event: { data: any; index: number; event: MouseEvent }) {
-    console.log('Legend hovered:', event.data.value);
   }
 
   // Tooltip formatters - recharts API

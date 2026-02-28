@@ -1,22 +1,22 @@
-import { 
-  Component, 
-  input, 
-  TemplateRef, 
-  ViewContainerRef, 
-  inject, 
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  TemplateRef,
+  ViewContainerRef,
+  inject,
   effect,
   Type,
   ComponentRef,
   OnDestroy
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
-export type CustomizedComponent = Type<any> | TemplateRef<any>;
+export type CustomizedContent = Type<any> | TemplateRef<any>;
 
 @Component({
   selector: 'svg:g[ngx-customized]',
   standalone: true,
-  imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <svg:g class="recharts-customized-wrapper">
       <!-- Dynamic content will be inserted here -->
@@ -28,7 +28,7 @@ export class CustomizedComponent implements OnDestroy {
   private componentRef?: ComponentRef<any>;
 
   // Inputs
-  component = input.required<CustomizedComponent>();
+  component = input.required<CustomizedContent>();
   props = input<Record<string, any>>({});
 
   constructor() {
@@ -52,11 +52,9 @@ export class CustomizedComponent implements OnDestroy {
         // Render Angular component
         this.componentRef = this.viewContainerRef.createComponent(component);
         
-        // Set input properties
+        // Set input properties using Angular's setInput API
         Object.keys(props).forEach(key => {
-          if (this.componentRef?.instance.hasOwnProperty(key)) {
-            this.componentRef.instance[key] = props[key];
-          }
+          this.componentRef?.setInput(key, props[key]);
         });
 
         // Trigger change detection

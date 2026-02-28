@@ -1,26 +1,22 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
- * Cell component is used to customize individual cells in Pie, Treemap, and other charts.
- * It doesn't render anything by itself but provides data for parent components.
+ * Data-only component for customizing individual cells/sectors in charts.
+ * Parent components (Pie, Treemap, Funnel) query cells using:
+ *   cells = contentChildren(CellComponent);
+ * Each Cell's fill/stroke overrides the parent's default for that data index.
  */
 @Component({
   selector: 'ngx-cell',
   standalone: true,
-  template: '', // Cell doesn't render anything
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '',
   styles: []
 })
 export class CellComponent {
-  // SVG properties
   fill = input<string>();
   stroke = input<string>();
   strokeWidth = input<number>();
-  strokeDasharray = input<string>();
-  
-  // Custom properties
-  name = input<string>();
-  value = input<number>();
-  
-  // Any additional properties
-  [key: string]: any;
+  opacity = input<number>();
+  className = input<string>('');
 }

@@ -2,13 +2,17 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
+  OnDestroy,
 } from '@angular/core';
-import { Store } from '@ngrx/store';
 import { ChartData, getNumericDataValue } from '../core/types';
 import { ScaleService } from '../services/scale.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
+import { createChartDimensions } from '../shared/chart-dimensions';
+import { ChartDataService } from '../services/chart-data.service';
 import { 
   line as d3Line, 
   area as d3Area, 
@@ -69,12 +73,37 @@ export interface AreaPoint {
     }
   `
 })
-export class AreaComponent {
-  private store = inject(Store);
+export class AreaComponent implements OnDestroy {
   private scaleService = inject(ScaleService);
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
+  private registryService = inject(GraphicalItemRegistryService, { optional: true });
+  private chartDataService = inject(ChartDataService, { optional: true });
+
+  private static nextId = 0;
+  private readonly itemId = `area-${AreaComponent.nextId++}`;
   
-  // Inputs
+  constructor() {
+    effect(() => {
+      this.registryService?.replace(this.itemId, {
+        id: this.itemId,
+        type: 'area',
+        dataKey: this.dataKey(),
+        name: this.name()?.toString(),
+        fill: this.fill(),
+        stroke: this.stroke(),
+        fillOpacity: this.fillOpacity(),
+        xAxisId: this.xAxisId(),
+        yAxisId: this.yAxisId(),
+        hide: this.hide(),
+        stackId: this.stackId(),
+      });
+    });
+  }
+  
+  ngOnDestroy(): void {
+    this.registryService?.unregister(this.itemId);
+  }
+
   dataKey = input.required<string>();
   data = input<ChartData[]>([]);
   fill = input<string>('#8884d8');
@@ -85,81 +114,84 @@ export class AreaComponent {
   dotSize = input<number>(3);
   hide = input<boolean>(false);
   type = input<'linear' | 'monotone' | 'basis' | 'cardinal' | 'step' | 'stepBefore' | 'stepAfter'>('linear');
-  
+  name = input<string | number | undefined>(undefined);
+  xAxisId = input<string | number>(0);
+  yAxisId = input<string | number>(0);
+  stackId = input<string | undefined>(undefined);
+  categoryKey = input<string>('name');
+
   // Chart dimensions
   chartWidth = input<number>(400);
   chartHeight = input<number>(300);
-  
-  // Use responsive dimensions if available
-  actualWidth = computed(() => {
-    const responsiveWidth = this.responsiveService?.width() ?? 0;
-    return responsiveWidth > 0 ? responsiveWidth : this.chartWidth();
-  });
-  
-  actualHeight = computed(() => {
-    const responsiveHeight = this.responsiveService?.height() ?? 0;
-    return responsiveHeight > 0 ? responsiveHeight : this.chartHeight();
-  });
-  
+
   // Chart margins
-  margin = input<{top: number, right: number, bottom: number, left: number}>({
+  margin = input<{ top: number; right: number; bottom: number; left: number }>({
     top: 20, right: 30, bottom: 40, left: 40
   });
+
+  private dims = createChartDimensions(
+    this.responsiveService,
+    this.chartWidth,
+    this.chartHeight,
+    this.margin
+  );
+
+  actualWidth = this.dims.actualWidth;
+  actualHeight = this.dims.actualHeight;
+  plotArea = this.dims.plotArea;
   
-  // Plot area calculation - use responsive service plot area if available
-  plotArea = computed(() => {
-    const plotWidth = this.responsiveService?.plotWidth() ?? 0;
-    const plotHeight = this.responsiveService?.plotHeight() ?? 0;
-    
-    if (plotWidth > 0 && plotHeight > 0) {
-      return {
-        width: plotWidth,
-        height: plotHeight,
-        x: 0,
-        y: 0,
-      };
-    }
-    
-    // Fallback to manual calculation
-    const margin = this.margin();
-    const width = this.actualWidth();
-    const height = this.actualHeight();
-    
-    return {
-      width: width - margin.left - margin.right,
-      height: height - margin.top - margin.bottom,
-      x: margin.left,
-      y: margin.top
-    };
+  resolvedData = computed(() => {
+    const explicit = this.data();
+    return explicit.length > 0 ? explicit : (this.chartDataService?.data() ?? []);
   });
-  
+
   // Computed properties
   points = computed(() => {
-    const data = this.data();
+    const data = this.resolvedData();
     const dataKey = this.dataKey();
     const plotArea = this.plotArea();
-    
+
     if (!data.length || plotArea.width <= 0 || plotArea.height <= 0) return [];
-    
-    // Create scales using D3 - Area charts use linear scale for even distribution
-    const yDomain = this.scaleService.getLinearDomain(data, dataKey);
-    
-    // For Area charts, use linear scale to distribute points evenly across width
-    const xScale = this.scaleService.createLinearScale([0, data.length - 1], [0, plotArea.width]);
+
+    const yDomain = this.chartDataService?.unifiedYDomain()
+      ?? this.scaleService.getLinearDomain(data, dataKey);
     const yScale = this.scaleService.createLinearScale(yDomain, [plotArea.height, 0]);
-    
+
+    // Check if we are in a ComposedChart with bars -- use band-center positioning
+    const hasBars = this.registryService && this.registryService.getItemsByType('bar').length > 0;
+
+    // Create scale once outside the loop
+    const ck = this.registryService?.categoryKey() ?? this.categoryKey();
+    const xScale = hasBars
+      ? null
+      : this.scaleService.createLinearScale([0, data.length - 1], [0, plotArea.width]);
+    const bandScale = hasBars
+      ? this.scaleService.createBandScale(
+          data.map(d => String(d[ck] || '')),
+          [0, plotArea.width]
+        )
+      : null;
+
     return data.map((item, index) => {
       const value = getNumericDataValue(item, dataKey);
-      
-      // Use index-based positioning for even distribution
-      const x = xScale(index);
+
+      let x: number;
+      if (bandScale) {
+        // ComposedChart with bars: position at band center
+        const bandX = bandScale(String(item[ck] || '')) ?? 0;
+        x = bandX + bandScale.bandwidth() / 2;
+      } else {
+        // Standalone AreaChart or ComposedChart without bars: linear scale
+        x = xScale!(index);
+      }
+
       const y = yScale(value);
-      
+
       return {
         x: Number(x.toFixed(1)),
         y: Number(y.toFixed(1)),
         value,
-        payload: item
+        payload: item,
       };
     });
   });

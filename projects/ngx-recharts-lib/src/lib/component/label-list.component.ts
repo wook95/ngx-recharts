@@ -1,5 +1,4 @@
-import { Component, input, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, input, computed, inject } from '@angular/core';
 import { LabelComponent, LabelPosition, ViewBox } from './label.component';
 import { ChartData, getDataValue } from '../core/types';
 
@@ -18,22 +17,24 @@ export interface LabelListEntry {
 @Component({
   selector: 'svg:g[ngx-label-list]',
   standalone: true,
-  imports: [CommonModule, LabelComponent],
+  imports: [LabelComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <svg:g class="recharts-label-list">
-      <ngx-label
-        *ngFor="let entry of labelEntries(); let i = index"
-        [viewBox]="entry.viewBox"
-        [parentViewBox]="entry.parentViewBox"
-        [value]="getLabelValue(entry, i)"
-        [position]="position()"
-        [offset]="offset()"
-        [angle]="angle()"
-        [fill]="fill() || entry.fill || '#666'"
-        [textBreakAll]="textBreakAll()"
-        [formatter]="formatter()"
-        [className]="'recharts-label-list-item'">
-      </ngx-label>
+      @for (entry of labelEntries(); track $index; let i = $index) {
+        <ngx-label
+          [viewBox]="entry.viewBox"
+          [parentViewBox]="entry.parentViewBox"
+          [value]="getLabelValue(entry, i)"
+          [position]="position()"
+          [offset]="offset()"
+          [angle]="angle()"
+          [fill]="fill() || entry.fill || '#666'"
+          [textBreakAll]="textBreakAll()"
+          [formatter]="formatter()"
+          [className]="'recharts-label-list-item'">
+        </ngx-label>
+      }
     </svg:g>
   `
 })
@@ -48,21 +49,37 @@ export class LabelListComponent {
   fill = input<string>();
   textBreakAll = input<boolean>(false);
   formatter = input<(label: any) => any>();
+  points = input<Array<{ x: number; y: number; width?: number; height?: number; value?: number | string }>>([]);
 
   // Computed label entries
   labelEntries = computed(() => {
     const data = this.data();
     if (!data || data.length === 0) return [];
 
+    const pts = this.points();
+
     return data.map((item, index) => {
-      // Create a basic viewBox for each data point
-      // In a real implementation, this would come from the parent chart component
-      const viewBox: ViewBox = {
-        x: index * 50, // Simplified positioning
-        y: 0,
-        width: 40,
-        height: 20
-      };
+      let viewBox: ViewBox;
+
+      if (pts && pts.length > index) {
+        const pt = pts[index];
+        viewBox = {
+          x: pt.x,
+          y: pt.y,
+          width: pt.width ?? 0,
+          height: pt.height ?? 0
+        };
+      } else {
+        // Fallback: use item coordinates if present, otherwise space evenly
+        const x = typeof (item as any).x === 'number' ? (item as any).x : index * 50;
+        const y = typeof (item as any).y === 'number' ? (item as any).y : 0;
+        viewBox = {
+          x,
+          y,
+          width: 0,
+          height: 0
+        };
+      }
 
       const entry: LabelListEntry = {
         value: this.dataKey() ? getDataValue(item, this.dataKey()!) : item,

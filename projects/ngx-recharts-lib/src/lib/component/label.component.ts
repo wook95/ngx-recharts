@@ -1,9 +1,8 @@
-import { Component, input, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, input, computed, inject } from '@angular/core';
 import { TextComponent, TextAnchor, TextVerticalAnchor } from './text.component';
 import { ChartLayoutService } from '../services/chart-layout.service';
 
-export type LabelPosition = 
+export type LabelPosition =
   | 'top' | 'left' | 'right' | 'bottom' | 'inside' | 'outside'
   | 'insideLeft' | 'insideRight' | 'insideTop' | 'insideBottom'
   | 'insideTopLeft' | 'insideBottomLeft' | 'insideTopRight' | 'insideBottomRight'
@@ -20,7 +19,8 @@ export interface ViewBox {
 @Component({
   selector: 'ngx-label',
   standalone: true,
-  imports: [CommonModule, TextComponent],
+  imports: [TextComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <svg:text 
       ngx-text
@@ -38,7 +38,7 @@ export interface ViewBox {
   `
 })
 export class LabelComponent {
-  private chartLayoutService = inject(ChartLayoutService);
+  private chartLayoutService = inject(ChartLayoutService, { optional: true });
 
   // Inputs
   viewBox = input<ViewBox>();
@@ -60,17 +60,19 @@ export class LabelComponent {
     if (explicitViewBox) return explicitViewBox;
 
     // Fallback to chart layout
-    const chartWidth = this.chartLayoutService.chartWidth();
-    const chartHeight = this.chartLayoutService.chartHeight();
-    const margin = this.chartLayoutService.margin();
+    if (this.chartLayoutService) {
+      const chartWidth = this.chartLayoutService.chartWidth();
+      const chartHeight = this.chartLayoutService.chartHeight();
+      const margin = this.chartLayoutService.margin();
 
-    if (chartWidth && chartHeight) {
-      return {
-        x: margin.left || 0,
-        y: margin.top || 0,
-        width: chartWidth - (margin.left || 0) - (margin.right || 0),
-        height: chartHeight - (margin.top || 0) - (margin.bottom || 0)
-      };
+      if (chartWidth && chartHeight) {
+        return {
+          x: margin.left || 0,
+          y: margin.top || 0,
+          width: chartWidth - (margin.left || 0) - (margin.right || 0),
+          height: chartHeight - (margin.top || 0) - (margin.bottom || 0)
+        };
+      }
     }
 
     return { x: 0, y: 0, width: 0, height: 0 };

@@ -1,76 +1,81 @@
-import { Component, input, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, input, computed } from '@angular/core';
 
 import { LegendPayload, LegendAlign, LegendVerticalAlign, LegendLayout } from './legend.component';
 
 @Component({
   selector: 'ngx-default-legend-content',
   standalone: true,
-  imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ul class="recharts-default-legend" [style]="listStyle()">
-      <li 
-        *ngFor="let entry of payload(); let i = index"
-        class="recharts-legend-item"
-        [class.inactive]="entry.inactive"
-        [style]="itemStyle()"
-        (click)="handleClick(entry, i, $event)"
-        (mouseenter)="handleMouseEnter(entry, i, $event)"
-        (mouseleave)="handleMouseLeave(entry, i, $event)">
-        
-        <svg 
-          [attr.width]="iconSize()"
-          [attr.height]="iconSize()"
-          [attr.viewBox]="'0 0 32 32'"
-          [style]="svgStyle()">
-            <!-- Line icon -->
-            <svg:line 
-              *ngIf="getIconType(entry) === 'plainline'"
-              [attr.stroke-width]="4"
-              fill="none"
-              [attr.stroke]="getColor(entry)"
-              [attr.stroke-dasharray]="entry.payload?.strokeDasharray"
-              x1="0" y1="16" x2="32" y2="16"
-              class="recharts-legend-icon" />
-            
-            <!-- Curved line icon -->
-            <svg:path 
-              *ngIf="getIconType(entry) === 'line'"
-              [attr.stroke-width]="4"
-              fill="none"
-              [attr.stroke]="getColor(entry)"
-              d="M0,16h10.67A5.33,5.33,0,1,1,21.33,16H32M21.33,16A5.33,5.33,0,1,1,10.67,16"
-              class="recharts-legend-icon" />
-            
-            <!-- Rectangle icon -->
-            <svg:path 
-              *ngIf="getIconType(entry) === 'rect'"
-              stroke="none"
-              [attr.fill]="getColor(entry)"
-              d="M0,4h32v24h-32z"
-              class="recharts-legend-icon" />
-            
-            <!-- Circle icon -->
-            <svg:circle 
-              *ngIf="getIconType(entry) === 'circle'"
-              [attr.fill]="getColor(entry)"
-              cx="16" cy="16" r="8"
-              class="recharts-legend-icon" />
-            
-            <!-- Square icon -->
-            <svg:rect 
-              *ngIf="getIconType(entry) === 'square'"
-              [attr.fill]="getColor(entry)"
-              x="8" y="8" width="16" height="16"
-              class="recharts-legend-icon" />
-        </svg>
-        
-        <span 
-          class="recharts-legend-item-text" 
-          [style.color]="getColor(entry)">
-          {{ getFormattedValue(entry, i) }}
-        </span>
-      </li>
+      @for (entry of payload(); track $index; let i = $index) {
+        <li
+          class="recharts-legend-item"
+          [class.inactive]="entry.inactive"
+          [style]="itemStyle()"
+          (click)="handleClick(entry, i, $event)"
+          (mouseenter)="handleMouseEnter(entry, i, $event)"
+          (mouseleave)="handleMouseLeave(entry, i, $event)">
+
+          <svg
+            [attr.width]="iconSize()"
+            [attr.height]="iconSize()"
+            [attr.viewBox]="'0 0 32 32'"
+            [style]="svgStyle()">
+              <!-- Line icon -->
+              @if (getIconType(entry) === 'plainline') {
+                <svg:line
+                  [attr.stroke-width]="4"
+                  fill="none"
+                  [attr.stroke]="getColor(entry)"
+                  [attr.stroke-dasharray]="entry.payload?.strokeDasharray"
+                  x1="0" y1="16" x2="32" y2="16"
+                  class="recharts-legend-icon" />
+              }
+
+              <!-- Curved line icon -->
+              @if (getIconType(entry) === 'line') {
+                <svg:path
+                  [attr.stroke-width]="4"
+                  fill="none"
+                  [attr.stroke]="getColor(entry)"
+                  d="M0,16h10.67A5.33,5.33,0,1,1,21.33,16H32M21.33,16A5.33,5.33,0,1,1,10.67,16"
+                  class="recharts-legend-icon" />
+              }
+
+              <!-- Rectangle icon -->
+              @if (getIconType(entry) === 'rect') {
+                <svg:path
+                  stroke="none"
+                  [attr.fill]="getColor(entry)"
+                  d="M0,4h32v24h-32z"
+                  class="recharts-legend-icon" />
+              }
+
+              <!-- Circle icon -->
+              @if (getIconType(entry) === 'circle') {
+                <svg:circle
+                  [attr.fill]="getColor(entry)"
+                  cx="16" cy="16" r="8"
+                  class="recharts-legend-icon" />
+              }
+
+              <!-- Square icon -->
+              @if (getIconType(entry) === 'square') {
+                <svg:rect
+                  [attr.fill]="getColor(entry)"
+                  x="8" y="8" width="16" height="16"
+                  class="recharts-legend-icon" />
+              }
+          </svg>
+
+          <span
+            class="recharts-legend-item-text"
+            [style.color]="getColor(entry)">
+            {{ getFormattedValue(entry, i) }}
+          </span>
+        </li>
+      }
     </ul>
   `,
   styles: [`

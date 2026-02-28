@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "emitDecoratorMetadata": true,
+    "types": ["node"]
+  },
+  "include": [
+    "../projects/ngx-recharts-lib/src/**/*.stories.ts",
+    "../src/**/*.stories.ts",
+    "./*.ts"
+  ],
+  "exclude": ["../node_modules"]
+}

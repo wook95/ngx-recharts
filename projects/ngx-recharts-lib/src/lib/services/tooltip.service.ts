@@ -9,7 +9,6 @@ export class TooltipService {
   private _label = signal('');
   private _coordinate = signal({ x: 0, y: 0 });
   private _targetCoordinate = signal({ x: 0, y: 0 });
-  private animationFrame?: number;
 
   // Public readonly signals
   readonly active = this._active.asReadonly();
@@ -31,16 +30,7 @@ export class TooltipService {
     this._targetCoordinate.set(coordinate);
   }
 
-  // recharts uses CSS transitions instead of JS animation
-  private animateToTarget() {
-    // No longer needed - CSS handles animation
-  }
-
   hideTooltip() {
-    if (this.animationFrame) {
-      cancelAnimationFrame(this.animationFrame);
-      this.animationFrame = undefined;
-    }
     this._active.set(false);
     this._payload.set([]);
     this._label.set('');

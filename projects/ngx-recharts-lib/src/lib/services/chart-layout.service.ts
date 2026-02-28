@@ -1,31 +1,34 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { selectWidth, selectHeight, selectOffset, selectPlotArea } from '../store/chart.state';
+import { Injectable, signal, computed } from '@angular/core';
 
-@Injectable({
-  providedIn: 'root'
-})
+/**
+ * @deprecated Use ResponsiveContainerService for layout dimensions or ChartDataService for chart data distribution.
+ * Retained for backward compatibility with LabelComponent and SurfaceComponent.
+ * Will be removed once those consumers are migrated.
+ */
+@Injectable()
 export class ChartLayoutService {
-  private store = inject(Store);
-  
-  // Signals from store
-  readonly width = signal(0);
-  readonly height = signal(0);
-  readonly offset = signal({ top: 0, bottom: 0, left: 0, right: 0 });
-  
+  private readonly _width = signal(0);
+  private readonly _height = signal(0);
+  private readonly _offset = signal({ top: 0, bottom: 0, left: 0, right: 0 });
+
+  // Public read-only signals
+  readonly width = this._width.asReadonly();
+  readonly height = this._height.asReadonly();
+  readonly offset = this._offset.asReadonly();
+
   // Computed properties for compatibility
-  readonly chartWidth = computed(() => this.width());
-  readonly chartHeight = computed(() => this.height());
-  readonly margin = computed(() => this.offset());
-  
+  readonly chartWidth = computed(() => this._width());
+  readonly chartHeight = computed(() => this._height());
+  readonly margin = computed(() => this._offset());
+
   // Computed plot area
   readonly plotArea = computed(() => {
-    const w = this.width();
-    const h = this.height();
-    const o = this.offset();
-    
+    const w = this._width();
+    const h = this._height();
+    const o = this._offset();
+
     if (w === 0 || h === 0) return null;
-    
+
     return {
       width: w - o.left - o.right,
       height: h - o.top - o.bottom,
@@ -33,16 +36,21 @@ export class ChartLayoutService {
       y: o.top
     };
   });
-  
-  constructor() {
-    // Subscribe to store changes and update signals
-    this.store.select(selectWidth).subscribe(width => this.width.set(width));
-    this.store.select(selectHeight).subscribe(height => this.height.set(height));
-    this.store.select(selectOffset).subscribe(offset => this.offset.set(offset));
+
+  setWidth(width: number): void {
+    this._width.set(width);
   }
-  
+
+  setHeight(height: number): void {
+    this._height.set(height);
+  }
+
+  setOffset(offset: { top: number; bottom: number; left: number; right: number }): void {
+    this._offset.set(offset);
+  }
+
   setDimensions(width: number, height: number): void {
-    this.width.set(width);
-    this.height.set(height);
+    this._width.set(width);
+    this._height.set(height);
   }
 }

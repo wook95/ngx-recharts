@@ -10,6 +10,8 @@ import { AxisOrientation, AxisType } from '../core/axis-types';
 import { ChartData } from '../core/types';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { ScaleService } from '../services/scale.service';
+import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
+import { ChartDataService } from '../services/chart-data.service';
 
 export interface ViewBox {
   x: number;
@@ -92,6 +94,8 @@ export class CartesianAxisComponent {
   private responsiveService = inject(ResponsiveContainerService, {
     optional: true,
   });
+  private registryService = inject(GraphicalItemRegistryService, { optional: true });
+  private chartDataService = inject(ChartDataService, { optional: true });
 
   // Recharts CartesianAxis API
   x = input<number>(0);
@@ -131,6 +135,15 @@ export class CartesianAxisComponent {
     });
   }
 
+  resolvedData = computed(() => {
+    const explicit = this.data();
+    return explicit.length > 0 ? explicit : (this.chartDataService?.data() ?? []);
+  });
+
+  resolvedChartType = computed(() => {
+    return this.chartDataService?.chartType() ?? this.chartType();
+  });
+
   // Computed dimensions
   actualWidth = computed(() => {
     const inputWidth = this.width();
@@ -166,17 +179,29 @@ export class CartesianAxisComponent {
 
   // Ticks computation
   ticks = computed(() => {
-    const data = this.data();
+    const data = this.resolvedData();
     const dataKey = this.dataKey();
     const orientation = this.orientation();
-    const chartType = this.chartType();
+    const chartType = this.resolvedChartType();
     const isHorizontal = orientation === 'top' || orientation === 'bottom';
     const size = isHorizontal ? this.actualWidth() : this.actualHeight();
 
     if (!data.length || size <= 0) return [];
 
     if (this.type() === 'category') {
-      if (chartType === 'line' || chartType === 'area') {
+      // Determine if band scale should be used:
+      // - bar chartType always uses band
+      // - composed chartType uses band when bars are registered
+      // - line/area chartType always uses linear
+      const useBandScale = chartType === 'bar' ||
+        (chartType === 'composed' && (this.registryService?.getItemsByType('bar').length ?? 0) > 0);
+
+      if (useBandScale) {
+        // Band scale for discrete data
+        const domain = this.scaleService.getCategoryDomain(data, dataKey);
+        const scale = this.scaleService.createBandScale(domain, [0, size]);
+        return this.scaleService.generateBandTicks(scale);
+      } else {
         // Linear scale for continuous data
         const scale = this.scaleService.createLinearScale(
           [0, data.length - 1],
@@ -186,15 +211,12 @@ export class CartesianAxisComponent {
           value: String(item[dataKey] || ''),
           coordinate: scale(index),
         }));
-      } else {
-        // Band scale for discrete data
-        const domain = this.scaleService.getCategoryDomain(data, dataKey);
-        const scale = this.scaleService.createBandScale(domain, [0, size]);
-        return this.scaleService.generateBandTicks(scale);
       }
     } else {
       // Linear scale for numerical data
-      const domain = this.scaleService.getLinearDomain(data, dataKey);
+      const domain = this.chartDataService?.unifiedYDomain()
+        ?? (dataKey ? this.scaleService.getLinearDomain(data, dataKey) : null);
+      if (!domain) return [];
       // Y-axis should be flipped (high values at top, low at bottom)
       const range: [number, number] = isHorizontal ? [0, size] : [size, 0];
       const scale = this.scaleService.createLinearScale(domain, range);
