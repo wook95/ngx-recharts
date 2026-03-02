@@ -85,15 +85,16 @@ export class RadarChartComponent {
     return typeof val === 'number' ? val : parseFloat(val);
   });
 
-  // Computed resolved outerRadius
+  // Computed resolved outerRadius (percentage is relative to half the min dimension)
   resolvedOuterRadius = computed(() => {
     const r = this.outerRadius();
+    const halfMin = Math.min(this.width(), this.height()) / 2;
     if (typeof r === 'string' && r.endsWith('%')) {
-      return Math.min(this.width(), this.height()) * (parseFloat(r) / 100);
+      return halfMin * (parseFloat(r) / 100);
     }
     const numR = typeof r === 'number' ? r : parseFloat(r);
     if (numR < 1) {
-      return numR * Math.min(this.width(), this.height()) / 2;
+      return numR * halfMin;
     }
     return numR;
   });

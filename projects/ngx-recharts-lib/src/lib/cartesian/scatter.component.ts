@@ -140,18 +140,22 @@ export class ScatterComponent implements OnDestroy {
     const yKey = typeof dk === 'string' ? 'y' : dk.y;
     const zKey = typeof dk !== 'string' ? dk.z : undefined;
 
-    // Compute x domain and scale
+    // Compute x domain and scale (include 0 to match axis behavior)
     const xValues = data.map(d => Number(d[xKey] ?? 0));
     const xMin = Math.min(...xValues);
     const xMax = Math.max(...xValues);
-    const xDomain: [number, number] = [xMin, xMax === xMin ? xMin + 1 : xMax];
+    const xDomainMin = xMin > 0 ? 0 : xMin;
+    const xDomainMax = xMax < 0 ? 0 : (xMax === xDomainMin ? xDomainMin + 1 : xMax);
+    const xDomain: [number, number] = [xDomainMin, xDomainMax];
     const xScale = this.scaleService.createLinearScale(xDomain, [0, plotArea.width]);
 
-    // Compute y domain and scale
+    // Compute y domain and scale (include 0 to match axis behavior)
     const yValues = data.map(d => Number(d[yKey] ?? 0));
     const yMin = Math.min(...yValues);
     const yMax = Math.max(...yValues);
-    const yDomain: [number, number] = [yMin, yMax === yMin ? yMin + 1 : yMax];
+    const yDomainMin = yMin > 0 ? 0 : yMin;
+    const yDomainMax = yMax < 0 ? 0 : (yMax === yDomainMin ? yDomainMin + 1 : yMax);
+    const yDomain: [number, number] = [yDomainMin, yDomainMax];
     const yScale = this.scaleService.createLinearScale(yDomain, [plotArea.height, 0]);
 
     // Get z-axis scale if available

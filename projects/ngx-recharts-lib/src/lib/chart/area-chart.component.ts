@@ -73,6 +73,13 @@ export class AreaChartComponent {
       }
     });
 
+    // Set dimensions so child components share consistent plotWidth/plotHeight
+    effect(() => {
+      if (this.responsiveService) {
+        this.responsiveService.setDimensions(this.actualWidth(), this.actualHeight());
+      }
+    });
+
     this.chartDataService.setChartType('area');
 
     effect(() => {

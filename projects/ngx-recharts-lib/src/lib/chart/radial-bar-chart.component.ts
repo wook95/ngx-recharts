@@ -108,6 +108,13 @@ export class RadialBarChartComponent {
       }
     });
 
+    // Set dimensions so child components share consistent plotWidth/plotHeight
+    effect(() => {
+      if (this.responsiveService) {
+        this.responsiveService.setDimensions(this.actualWidth(), this.actualHeight());
+      }
+    });
+
     // yDomainMode not applicable for scatter/radialBar charts
     this.chartDataService.setChartType('radialBar');
 

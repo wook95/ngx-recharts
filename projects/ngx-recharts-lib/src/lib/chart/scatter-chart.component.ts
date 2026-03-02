@@ -73,8 +73,16 @@ export class ScatterChartComponent {
       }
     });
 
-    // yDomainMode not applicable for scatter/radialBar charts
+    // Set dimensions so child components share consistent plotWidth/plotHeight
+    effect(() => {
+      if (this.responsiveService) {
+        this.responsiveService.setDimensions(this.actualWidth(), this.actualHeight());
+      }
+    });
+
+    // Scatter charts use independent domains (each series has its own x/y scale)
     this.chartDataService.setChartType('scatter');
+    this.chartDataService.setYDomainMode('independent');
 
     effect(() => {
       this.chartDataService.setData(this.data());

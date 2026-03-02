@@ -60,6 +60,13 @@ export class FunnelChartComponent {
       }
     });
 
+    // Set dimensions so child components share consistent plotWidth/plotHeight
+    effect(() => {
+      if (this.responsiveService) {
+        this.responsiveService.setDimensions(this.actualWidth(), this.actualHeight());
+      }
+    });
+
     this.chartDataService.setChartType('funnel');
 
     effect(() => {
