@@ -16,6 +16,8 @@ import { PolarTooltipStrategy } from '../services/polar-tooltip-strategy';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { TooltipService } from '../services/tooltip.service';
 import { TOOLTIP_HIT_TEST_STRATEGY } from '../services/tooltip-hit-test-strategy';
+import { PolarLabelContextService } from '../context/label-context.service';
+import { PolarLabelListContextService } from '../context/label-list-context.service';
 
 @Component({
   selector: 'ngx-radar-chart',
@@ -28,6 +30,8 @@ import { TOOLTIP_HIT_TEST_STRATEGY } from '../services/tooltip-hit-test-strategy
     GraphicalItemRegistryService,
     ResponsiveContainerService,
     PolarCoordinateService,
+    PolarLabelContextService,
+    PolarLabelListContextService,
     { provide: TOOLTIP_HIT_TEST_STRATEGY, useClass: PolarTooltipStrategy },
   ],
   template: `

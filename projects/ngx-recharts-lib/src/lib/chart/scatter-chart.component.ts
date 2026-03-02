@@ -17,6 +17,8 @@ import { TooltipService } from '../services/tooltip.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { ChartDataService } from '../services/chart-data.service';
 import { AxisRegistryService } from '../services/axis-registry.service';
+import { CartesianLabelContextService } from '../context/label-context.service';
+import { CartesianLabelListContextService } from '../context/label-list-context.service';
 
 @Component({
   selector: 'ngx-scatter-chart',
@@ -31,6 +33,8 @@ import { AxisRegistryService } from '../services/axis-registry.service';
     GraphicalItemRegistryService,
     ResponsiveContainerService,
     AxisRegistryService,
+    CartesianLabelContextService,
+    CartesianLabelListContextService,
     {
       provide: CHART_TOOLTIP_SERVICE,
       useExisting: TooltipService,

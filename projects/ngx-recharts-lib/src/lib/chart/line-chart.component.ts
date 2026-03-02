@@ -16,6 +16,8 @@ import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
 import { TooltipService } from '../services/tooltip.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { ChartDataService, YDomainMode } from '../services/chart-data.service';
+import { CartesianLabelContextService } from '../context/label-context.service';
+import { CartesianLabelListContextService } from '../context/label-list-context.service';
 
 
 @Component({
@@ -28,6 +30,8 @@ import { ChartDataService, YDomainMode } from '../services/chart-data.service';
     TooltipService,
     GraphicalItemRegistryService,
     ChartDataService,
+    CartesianLabelContextService,
+    CartesianLabelListContextService,
     {
       provide: CHART_TOOLTIP_SERVICE,
       useExisting: TooltipService,

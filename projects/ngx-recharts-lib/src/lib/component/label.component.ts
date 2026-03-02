@@ -1,6 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, computed, inject, TemplateRef } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { TextComponent, TextAnchor, TextVerticalAnchor } from './text.component';
 import { ChartLayoutService } from '../services/chart-layout.service';
+import { CartesianLabelContextService, PolarLabelContextService } from '../context/label-context.service';
+import { CartesianViewBox, isPolarViewBox, PolarViewBox } from '../core/label-types';
+import { polarToCartesian } from '../util/polar-utils';
 
 export type LabelPosition =
   | 'top' | 'left' | 'right' | 'bottom' | 'inside' | 'outside'
@@ -9,40 +13,39 @@ export type LabelPosition =
   | 'insideStart' | 'insideEnd' | 'end' | 'center' | 'centerTop' | 'centerBottom' | 'middle'
   | { x?: number; y?: number };
 
-export interface ViewBox {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-}
-
 @Component({
   selector: 'ngx-label',
   standalone: true,
-  imports: [TextComponent],
+  imports: [NgTemplateOutlet, TextComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:text 
-      ngx-text
-      [x]="labelX()"
-      [y]="labelY()"
-      [textAnchor]="labelTextAnchor()"
-      [verticalAnchor]="labelVerticalAnchor()"
-      [fill]="fill()"
-      [angle]="angle()"
-      [width]="width()"
-      [breakAll]="textBreakAll()"
-      [className]="'recharts-label ' + (className() || '')"
-      [children]="labelText()">
-    </svg:text>
+    @if (shouldRenderContent()) {
+      <ng-container *ngTemplateOutlet="content()!; context: contentContext()"></ng-container>
+    } @else {
+      <svg:text
+        ngx-text
+        [x]="labelX()"
+        [y]="labelY()"
+        [textAnchor]="labelTextAnchor()"
+        [verticalAnchor]="labelVerticalAnchor()"
+        [fill]="fill()"
+        [angle]="angle()"
+        [width]="width()"
+        [breakAll]="textBreakAll()"
+        [className]="'recharts-label ' + (className() || '')"
+        [children]="labelText()">
+      </svg:text>
+    }
   `
 })
 export class LabelComponent {
   private chartLayoutService = inject(ChartLayoutService, { optional: true });
+  private cartesianContext = inject(CartesianLabelContextService, { optional: true });
+  private polarContext = inject(PolarLabelContextService, { optional: true });
 
   // Inputs
-  viewBox = input<ViewBox>();
-  parentViewBox = input<ViewBox>();
+  viewBox = input<CartesianViewBox | PolarViewBox>();
+  parentViewBox = input<CartesianViewBox | PolarViewBox>();
   formatter = input<(label: any) => any>();
   value = input<number | string>();
   offset = input<number>(5);
@@ -53,13 +56,39 @@ export class LabelComponent {
   width = input<number>();
   fill = input<string>('#666');
   children = input<string | number>();
+  content = input<TemplateRef<any>>();
+  id = input<string>();
 
-  // Get effective viewBox
+  // Check if content template should be rendered
+  shouldRenderContent = computed(() => {
+    return this.content() != null;
+  });
+
+  // Context for content template
+  contentContext = computed(() => ({
+    $implicit: this.labelText(),
+    x: this.labelX(),
+    y: this.labelY(),
+    viewBox: this.effectiveViewBox(),
+    value: this.value(),
+    offset: this.offset(),
+    position: this.position()
+  }));
+
+  // Get effective viewBox from: explicit prop > context service > ChartLayoutService fallback
   private effectiveViewBox = computed(() => {
     const explicitViewBox = this.viewBox();
     if (explicitViewBox) return explicitViewBox;
 
-    // Fallback to chart layout
+    // Try polar context first
+    const polarViewBox = this.polarContext?.getViewBox()();
+    if (polarViewBox) return polarViewBox;
+
+    // Try cartesian context
+    const cartesianViewBox = this.cartesianContext?.getViewBox()();
+    if (cartesianViewBox) return cartesianViewBox;
+
+    // Fallback to chart layout service
     if (this.chartLayoutService) {
       const chartWidth = this.chartLayoutService.chartWidth();
       const chartHeight = this.chartLayoutService.chartHeight();
@@ -83,13 +112,13 @@ export class LabelComponent {
     const children = this.children();
     const value = this.value();
     const formatter = this.formatter();
-    
+
     const text = children !== undefined ? children : value;
-    
+
     if (formatter && text !== undefined) {
       return formatter(text);
     }
-    
+
     return text?.toString() || '';
   });
 
@@ -99,11 +128,25 @@ export class LabelComponent {
     const position = this.position();
     const offset = this.offset();
 
-    if (!viewBox || (viewBox.width === 0 && viewBox.height === 0)) {
+    if (!viewBox) {
+      return { x: 0, y: 0, textAnchor: 'middle' as TextAnchor, verticalAnchor: 'middle' as TextVerticalAnchor };
+    }
+
+    // Handle Polar viewBox
+    if (isPolarViewBox(viewBox)) {
+      return this.getPolarPositionAttrs(viewBox, position, offset);
+    }
+
+    // Handle Cartesian viewBox
+    if (!('width' in viewBox)) {
       return { x: 0, y: 0, textAnchor: 'middle' as TextAnchor, verticalAnchor: 'middle' as TextVerticalAnchor };
     }
 
     const { x = 0, y = 0, width = 0, height = 0 } = viewBox;
+
+    if (width === 0 && height === 0) {
+      return { x: 0, y: 0, textAnchor: 'middle' as TextAnchor, verticalAnchor: 'middle' as TextVerticalAnchor };
+    }
 
     if (typeof position === 'object' && 'x' in position) {
       return {
@@ -171,6 +214,69 @@ export class LabelComponent {
           textAnchor: 'middle' as TextAnchor,
           verticalAnchor: 'end' as TextVerticalAnchor
         };
+      case 'insideTopLeft':
+        return {
+          x: x + offset,
+          y: y + offset,
+          textAnchor: 'start' as TextAnchor,
+          verticalAnchor: 'start' as TextVerticalAnchor
+        };
+      case 'insideTopRight':
+        return {
+          x: x + width - offset,
+          y: y + offset,
+          textAnchor: 'end' as TextAnchor,
+          verticalAnchor: 'start' as TextVerticalAnchor
+        };
+      case 'insideBottomLeft':
+        return {
+          x: x + offset,
+          y: y + height - offset,
+          textAnchor: 'start' as TextAnchor,
+          verticalAnchor: 'end' as TextVerticalAnchor
+        };
+      case 'insideBottomRight':
+        return {
+          x: x + width - offset,
+          y: y + height - offset,
+          textAnchor: 'end' as TextAnchor,
+          verticalAnchor: 'end' as TextVerticalAnchor
+        };
+      case 'insideStart':
+        return {
+          x: x + offset,
+          y: y + height / 2,
+          textAnchor: 'start' as TextAnchor,
+          verticalAnchor: 'middle' as TextVerticalAnchor
+        };
+      case 'insideEnd':
+        return {
+          x: x + width - offset,
+          y: y + height / 2,
+          textAnchor: 'end' as TextAnchor,
+          verticalAnchor: 'middle' as TextVerticalAnchor
+        };
+      case 'end':
+        return {
+          x: x + width + offset,
+          y: y + height / 2,
+          textAnchor: 'start' as TextAnchor,
+          verticalAnchor: 'middle' as TextVerticalAnchor
+        };
+      case 'centerTop':
+        return {
+          x: x + width / 2,
+          y: y + height / 2,
+          textAnchor: 'middle' as TextAnchor,
+          verticalAnchor: 'start' as TextVerticalAnchor
+        };
+      case 'centerBottom':
+        return {
+          x: x + width / 2,
+          y: y + height / 2,
+          textAnchor: 'middle' as TextAnchor,
+          verticalAnchor: 'end' as TextVerticalAnchor
+        };
       case 'center':
       case 'middle':
       default:
@@ -187,4 +293,62 @@ export class LabelComponent {
   labelY = computed(() => this.positionAttrs().y);
   labelTextAnchor = computed(() => this.positionAttrs().textAnchor);
   labelVerticalAnchor = computed(() => this.positionAttrs().verticalAnchor);
+
+  // Polar position calculation
+  private getPolarPositionAttrs(
+    viewBox: PolarViewBox,
+    position: LabelPosition,
+    offset: number
+  ): { x: number; y: number; textAnchor: TextAnchor; verticalAnchor: TextVerticalAnchor } {
+    const { cx = 0, cy = 0, innerRadius = 0, outerRadius = 0, startAngle = 0, endAngle = 0 } = viewBox;
+    const midAngle = (startAngle + endAngle) / 2;
+
+    if (position === 'outside') {
+      const { x, y } = polarToCartesian(cx, cy, outerRadius + offset, midAngle);
+      return {
+        x,
+        y,
+        textAnchor: x >= cx ? 'start' : 'end',
+        verticalAnchor: 'middle'
+      };
+    }
+
+    if (position === 'center') {
+      return {
+        x: cx,
+        y: cy,
+        textAnchor: 'middle',
+        verticalAnchor: 'middle'
+      };
+    }
+
+    if (position === 'centerTop') {
+      return {
+        x: cx,
+        y: cy,
+        textAnchor: 'middle',
+        verticalAnchor: 'start'
+      };
+    }
+
+    if (position === 'centerBottom') {
+      return {
+        x: cx,
+        y: cy,
+        textAnchor: 'middle',
+        verticalAnchor: 'end'
+      };
+    }
+
+    // Default: middle of radius
+    const r = (innerRadius + outerRadius) / 2;
+    const { x, y } = polarToCartesian(cx, cy, r, midAngle);
+
+    return {
+      x,
+      y,
+      textAnchor: 'middle',
+      verticalAnchor: 'middle'
+    };
+  }
 }

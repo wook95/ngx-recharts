@@ -65,7 +65,7 @@ export * from './lib/component/default-tooltip-content.component';
 export * from './lib/component/cell.component';
 export * from './lib/component/text.component';
 export { LabelComponent } from './lib/component/label.component';
-export type { LabelPosition, ViewBox as LabelViewBox } from './lib/component/label.component';
+export type { LabelPosition } from './lib/component/label.component';
 export * from './lib/component/label-list.component';
 export * from './lib/component/customized.component';
 
@@ -87,6 +87,31 @@ export * from './lib/polar';
 export * from './lib/core/axis-types';
 export * from './lib/core/tooltip-types';
 export * from './lib/core/chart-context.token';
+export type {
+  CartesianViewBox,
+  TrapezoidViewBox,
+  PolarViewBox,
+  ViewBox as LabelViewBoxUnion
+} from './lib/core/label-types';
+export {
+  isPolarViewBox,
+  isTrapezoidViewBox,
+  isCartesianViewBox,
+  cartesianToTrapezoid
+} from './lib/core/label-types';
+
+// Context Services
+export * from './lib/context/label-context.service';
+export type {
+  BaseLabelListEntry,
+  CartesianLabelListEntry,
+  PolarLabelListEntry,
+  LabelListEntry as ContextLabelListEntry
+} from './lib/context/label-list-context.service';
+export {
+  CartesianLabelListContextService,
+  PolarLabelListContextService
+} from './lib/context/label-list-context.service';
 
 // Shared utilities
 export { createChartDimensions } from './lib/shared/chart-dimensions';

@@ -18,6 +18,8 @@ import { PolarCoordinateService } from '../services/polar-coordinate.service';
 import { TOOLTIP_HIT_TEST_STRATEGY } from '../services/tooltip-hit-test-strategy';
 import { PolarTooltipStrategy } from '../services/polar-tooltip-strategy';
 import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
+import { PolarLabelContextService } from '../context/label-context.service';
+import { PolarLabelListContextService } from '../context/label-list-context.service';
 
 @Component({
   selector: 'ngx-radial-bar-chart',
@@ -32,6 +34,8 @@ import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
     PolarCoordinateService,
     // deprecated: retained for LabelComponent/SurfaceComponent backward compat
     ChartLayoutService,
+    PolarLabelContextService,
+    PolarLabelListContextService,
     { provide: TOOLTIP_HIT_TEST_STRATEGY, useClass: PolarTooltipStrategy },
     { provide: CHART_TOOLTIP_SERVICE, useExisting: TooltipService },
   ],
