@@ -145,7 +145,7 @@ export class TooltipComponent {
   shared = input<boolean>(true);
   snapToDataPoint = input<boolean>(false);
   isAnimationActive = input<boolean>(true);
-  animationDuration = input<number>(150);
+  animationDuration = input<number>(1500);
   animationEasing = input<
     'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
   >('ease');

@@ -9,6 +9,7 @@ import {
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
 import { ChartData, ChartMargin } from '../core/types';
+import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { TooltipService } from '../services/tooltip.service';
@@ -47,6 +48,7 @@ import { PolarLabelListContextService } from '../context/label-list-context.serv
         [margin]="margin()"
         [width]="actualWidth()"
         [height]="actualHeight()"
+        [tooltip]="tooltip()"
       >
         <ng-content></ng-content>
       </ngx-chart-container>
@@ -63,6 +65,7 @@ export class RadialBarChartComponent {
   width = input<number>(400);
   height = input<number>(400);
   margin = input<ChartMargin>({ top: 0, right: 0, bottom: 0, left: 0 });
+  tooltip = input<TooltipConfig>({});
   cx = input<number | string>('50%');
   cy = input<number | string>('50%');
   innerRadius = input<number | string>('30%');

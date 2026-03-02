@@ -135,10 +135,41 @@ export class ChartContainerComponent {
   tooltip = input<TooltipConfig>({});
 
   // Merged tooltip configuration with defaults
-  tooltipConfig = computed(() => ({
-    ...DEFAULT_TOOLTIP_CONFIG,
-    ...this.tooltip(),
-  }));
+  // ContentChild Bridge: when user places <ngx-tooltip separator=":"> as a child,
+  // its inputs override the config object. This matches Recharts behavior where
+  // <Tooltip /> props are the source of truth.
+  tooltipConfig = computed(() => {
+    const child = this.tooltipComponent();
+    if (child) {
+      // ContentChild Bridge: child's inputs are authoritative
+      return {
+        separator: child.separator(),
+        offset: child.offset(),
+        filterNull: child.filterNull(),
+        itemStyle: child.itemStyle(),
+        wrapperStyle: child.wrapperStyle(),
+        contentStyle: child.contentStyle(),
+        labelStyle: child.labelStyle(),
+        cursor: child.cursor(),
+        viewBox: child.viewBox(),
+        allowEscapeViewBox: child.allowEscapeViewBox(),
+        position: child.position(),
+        formatter: child.formatter(),
+        labelFormatter: child.labelFormatter(),
+        itemSorter: child.itemSorter(),
+        shared: child.shared(),
+        snapToDataPoint: child.snapToDataPoint(),
+        isAnimationActive: child.isAnimationActive(),
+        animationDuration: child.animationDuration(),
+        animationEasing: child.animationEasing(),
+      };
+    }
+    // Fallback: config object merged with defaults
+    return {
+      ...DEFAULT_TOOLTIP_CONFIG,
+      ...this.tooltip(),
+    };
+  });
 
   // Computed properties
   chartWidth = computed(() => this.width());

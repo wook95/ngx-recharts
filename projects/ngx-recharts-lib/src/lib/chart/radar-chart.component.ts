@@ -9,6 +9,8 @@ import {
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
 import { ChartMargin } from '../core/types';
+import { TooltipConfig } from '../core/tooltip-types';
+import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
 import { ChartDataService } from '../services/chart-data.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { PolarCoordinateService } from '../services/polar-coordinate.service';
@@ -33,6 +35,7 @@ import { PolarLabelListContextService } from '../context/label-list-context.serv
     PolarLabelContextService,
     PolarLabelListContextService,
     { provide: TOOLTIP_HIT_TEST_STRATEGY, useClass: PolarTooltipStrategy },
+    { provide: CHART_TOOLTIP_SERVICE, useExisting: TooltipService },
   ],
   template: `
     <ngx-recharts-wrapper [width]="width()" [height]="height()">
@@ -41,7 +44,8 @@ import { PolarLabelListContextService } from '../context/label-list-context.serv
         [chartType]="'radar'"
         [margin]="margin()"
         [width]="width()"
-        [height]="height()">
+        [height]="height()"
+        [tooltip]="tooltip()">
         <ng-content />
       </ngx-chart-container>
     </ngx-recharts-wrapper>
@@ -56,6 +60,7 @@ export class RadarChartComponent {
   width = input<number>(400);
   height = input<number>(400);
   margin = input<ChartMargin>({ top: 0, right: 0, bottom: 0, left: 0 });
+  tooltip = input<TooltipConfig>({});
   cx = input<number | string>('50%');
   cy = input<number | string>('50%');
   innerRadius = input<number>(0);
