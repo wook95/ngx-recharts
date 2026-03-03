@@ -6,7 +6,9 @@ import {
   inject,
   input,
   OnDestroy,
+  output,
 } from '@angular/core';
+import { ChartMouseEvent } from '../core/event-types';
 import { AxisRegistryService } from '../services/axis-registry.service';
 import { ChartDataService } from '../services/chart-data.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
@@ -45,6 +47,9 @@ export interface ScatterPoint {
           [animationBegin]="animationBegin()"
           [animationDuration]="animationDuration()"
           [animationEasing]="animationEasing()"
+          (symbolClick)="handleScatterClick($event, point, $index)"
+          (symbolMouseEnter)="handleScatterMouseEnter($event, point, $index)"
+          (symbolMouseLeave)="handleScatterMouseLeave($event, point, $index)"
         />
       }
     }
@@ -81,6 +86,11 @@ export class ScatterComponent implements OnDestroy {
   animationBegin = input<number>(0);
   animationDuration = input<number>(300);
   animationEasing = input<string>('ease');
+
+  // Event outputs
+  scatterClick = output<ChartMouseEvent>();
+  scatterMouseEnter = output<ChartMouseEvent>();
+  scatterMouseLeave = output<ChartMouseEvent>();
 
   // Chart dimensions (for standalone use)
   chartWidth = input<number>(400);
@@ -127,6 +137,36 @@ export class ScatterComponent implements OnDestroy {
     const explicit = this.data();
     return explicit.length > 0 ? explicit : (this.chartDataService?.data() ?? []);
   });
+
+  handleScatterClick(event: MouseEvent, point: ScatterPoint, index: number) {
+    this.scatterClick.emit({
+      nativeEvent: event,
+      payload: point.payload,
+      index,
+      value: point.payload,
+      coordinate: { x: point.x, y: point.y },
+    });
+  }
+
+  handleScatterMouseEnter(event: MouseEvent, point: ScatterPoint, index: number) {
+    this.scatterMouseEnter.emit({
+      nativeEvent: event,
+      payload: point.payload,
+      index,
+      value: point.payload,
+      coordinate: { x: point.x, y: point.y },
+    });
+  }
+
+  handleScatterMouseLeave(event: MouseEvent, point: ScatterPoint, index: number) {
+    this.scatterMouseLeave.emit({
+      nativeEvent: event,
+      payload: point.payload,
+      index,
+      value: point.payload,
+      coordinate: { x: point.x, y: point.y },
+    });
+  }
 
   scatterPoints = computed((): ScatterPoint[] => {
     const data = this.resolvedData();

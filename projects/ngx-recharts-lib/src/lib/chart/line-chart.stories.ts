@@ -208,3 +208,32 @@ export const WithAutoLegend: Story = {
     height: 400,
   },
 };
+
+export const Interactive: Story = {
+  render: (args) => ({
+    props: {
+      ...args,
+      onChartClick: (event: any) => console.log('Chart clicked:', event),
+      onChartMouseMove: (event: any) => console.log('Mouse move:', event),
+    },
+    template: `
+      <ngx-line-chart
+        [data]="data"
+        [width]="width"
+        [height]="height"
+        (chartClick)="onChartClick($event)"
+        (chartMouseMove)="onChartMouseMove($event)"
+      >
+        <svg:g ngx-cartesian-grid [horizontal]="true" [vertical]="false"></svg:g>
+        <svg:g ngx-x-axis dataKey="name"></svg:g>
+        <svg:g ngx-y-axis></svg:g>
+        <svg:g ngx-line dataKey="uv" stroke="#8884d8"></svg:g>
+      </ngx-line-chart>
+    `,
+  }),
+  args: {
+    data: pageData,
+    width: 600,
+    height: 400,
+  },
+};

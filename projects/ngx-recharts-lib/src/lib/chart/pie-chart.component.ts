@@ -5,9 +5,11 @@ import {
   effect,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
+import { ChartMouseEvent } from '../core/event-types';
 import { ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
 import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
@@ -45,7 +47,11 @@ import { PolarLabelListContextService } from '../context/label-list-context.serv
         [margin]="margin()"
         [width]="width()"
         [height]="height()"
-        [tooltip]="tooltip()">
+        [tooltip]="tooltip()"
+        (containerClick)="chartClick.emit($event)"
+        (containerMouseMove)="chartMouseMove.emit($event)"
+        (containerMouseEnter)="chartMouseEnter.emit($event)"
+        (containerMouseLeave)="chartMouseLeave.emit($event)">
         <ng-content />
       </ngx-chart-container>
     </ngx-recharts-wrapper>
@@ -54,6 +60,12 @@ import { PolarLabelListContextService } from '../context/label-list-context.serv
 export class PieChartComponent {
   private chartDataService = inject(ChartDataService);
   private polarService = inject(PolarCoordinateService);
+
+  // Chart-level event outputs
+  chartClick = output<ChartMouseEvent>();
+  chartMouseMove = output<ChartMouseEvent>();
+  chartMouseEnter = output<ChartMouseEvent>();
+  chartMouseLeave = output<ChartMouseEvent>();
 
   // Inputs
   data = input<any[]>([]);

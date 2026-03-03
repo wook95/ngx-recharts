@@ -2,10 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
 } from '@angular/core';
 import { sankey, sankeyLinkHorizontal, SankeyNode, SankeyLink } from 'd3-sankey';
 import { RectangleComponent } from '../shape/rectangle.component';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 
 export interface SankeyData {
   nodes: { name: string }[];
@@ -26,9 +28,10 @@ interface SankeyLinkProcessed extends SankeyLink<{ name: string }, { source: num
   selector: 'ngx-sankey',
   standalone: true,
   imports: [RectangleComponent],
+  providers: [ResponsiveContainerService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg [attr.width]="width()" [attr.height]="height()">
+    <svg [attr.width]="actualWidth()" [attr.height]="actualHeight()">
       <!-- Links -->
       @for (link of sankeyLinks(); track $index) {
         <svg:path
@@ -50,9 +53,9 @@ interface SankeyLinkProcessed extends SankeyLink<{ name: string }, { source: num
           [stroke]="stroke()"
         />
         <svg:text
-          [attr.x]="node.x0! < width() / 2 ? node.x1! + 6 : node.x0! - 6"
+          [attr.x]="node.x0! < actualWidth() / 2 ? node.x1! + 6 : node.x0! - 6"
           [attr.y]="(node.y0! + node.y1!) / 2"
-          [attr.text-anchor]="node.x0! < width() / 2 ? 'start' : 'end'"
+          [attr.text-anchor]="node.x0! < actualWidth() / 2 ? 'start' : 'end'"
           dominant-baseline="central"
           font-size="12">
           {{ node.name }}
@@ -62,6 +65,8 @@ interface SankeyLinkProcessed extends SankeyLink<{ name: string }, { source: num
   `,
 })
 export class SankeyComponent {
+  private responsiveService = inject(ResponsiveContainerService, { optional: true });
+
   data = input<SankeyData>({ nodes: [], links: [] });
   width = input<number>(600);
   height = input<number>(400);
@@ -78,6 +83,15 @@ export class SankeyComponent {
   nameKey = input<string>('name');
   fill = input<string>('#77c878');
   stroke = input<string>('#333');
+
+  actualWidth = computed(() => {
+    const responsiveWidth = this.responsiveService?.width() ?? 0;
+    return responsiveWidth > 0 ? responsiveWidth : this.width();
+  });
+  actualHeight = computed(() => {
+    const responsiveHeight = this.responsiveService?.height() ?? 0;
+    return responsiveHeight > 0 ? responsiveHeight : this.height();
+  });
 
   private layout = computed(() => {
     const margin = this.margin();

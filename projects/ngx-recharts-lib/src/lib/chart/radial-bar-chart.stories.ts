@@ -86,3 +86,31 @@ export const WithCornerRadius: Story = {
     height: 300,
   },
 };
+
+export const Interactive: Story = {
+  render: (args) => ({
+    props: {
+      ...args,
+      radialData,
+      onChartClick: (event: any) => console.log('Chart clicked:', event),
+      onChartMouseMove: (event: any) => console.log('Mouse move:', event),
+    },
+    template: `
+      <ngx-radial-bar-chart
+        [data]="radialData"
+        [width]="width"
+        [height]="height"
+        cx="50%" cy="50%" [innerRadius]="'10%'" [outerRadius]="'80%'"
+        [startAngle]="180" [endAngle]="0"
+        (chartClick)="onChartClick($event)"
+        (chartMouseMove)="onChartMouseMove($event)"
+      >
+        <svg:g ngx-radial-bar dataKey="uv" [background]="true" [label]="true"></svg:g>
+      </ngx-radial-bar-chart>
+    `,
+  }),
+  args: {
+    width: 500,
+    height: 300,
+  },
+};

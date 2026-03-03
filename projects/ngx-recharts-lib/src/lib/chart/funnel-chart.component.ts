@@ -5,11 +5,13 @@ import {
   effect,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
 import { ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
+import { ChartMouseEvent } from '../core/event-types';
 import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
 import { ChartDataService } from '../services/chart-data.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
@@ -37,6 +39,10 @@ import { TooltipService } from '../services/tooltip.service';
         [margin]="margin()"
         [chartType]="'funnel'"
         [tooltip]="tooltip()"
+        (containerClick)="chartClick.emit($event)"
+        (containerMouseMove)="chartMouseMove.emit($event)"
+        (containerMouseEnter)="chartMouseEnter.emit($event)"
+        (containerMouseLeave)="chartMouseLeave.emit($event)"
       >
         <ng-content></ng-content>
       </ngx-chart-container>
@@ -74,6 +80,12 @@ export class FunnelChartComponent {
       this.chartDataService.setMargin(this.margin());
     });
   }
+
+  // Outputs
+  chartClick = output<ChartMouseEvent>();
+  chartMouseMove = output<ChartMouseEvent>();
+  chartMouseEnter = output<ChartMouseEvent>();
+  chartMouseLeave = output<ChartMouseEvent>();
 
   // Inputs
   data = input<any[]>([]);

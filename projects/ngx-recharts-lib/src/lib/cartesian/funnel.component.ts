@@ -7,7 +7,9 @@ import {
   inject,
   input,
   OnDestroy,
+  output,
 } from '@angular/core';
+import { ChartMouseEvent } from '../core/event-types';
 import { ChartDataService } from '../services/chart-data.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
@@ -36,9 +38,21 @@ export interface FunnelSegment {
     @if (!hide()) {
       @for (segment of segments(); track $index) {
         @if ($last && lastShapeType() === 'rectangle') {
-          <svg:g ngx-rectangle [x]="segment.x" [y]="segment.y" [width]="segment.lowerWidth" [height]="segment.height" [fill]="segment.fill" [stroke]="stroke()" [isAnimationActive]="isAnimationActive()" [animationBegin]="animationBegin()" [animationDuration]="animationDuration()" [animationEasing]="animationEasing()" />
+          <svg:g
+            (click)="handleFunnelClick($event, segment, $index)"
+            (mouseenter)="handleFunnelMouseEnter($event, segment, $index)"
+            (mouseleave)="handleFunnelMouseLeave($event, segment, $index)"
+          >
+            <svg:g ngx-rectangle [x]="segment.x" [y]="segment.y" [width]="segment.lowerWidth" [height]="segment.height" [fill]="segment.fill" [stroke]="stroke()" [isAnimationActive]="isAnimationActive()" [animationBegin]="animationBegin()" [animationDuration]="animationDuration()" [animationEasing]="animationEasing()" />
+          </svg:g>
         } @else {
-          <svg:g ngx-trapezoid [x]="segment.x" [y]="segment.y" [upperWidth]="segment.upperWidth" [lowerWidth]="segment.lowerWidth" [height]="segment.height" [fill]="segment.fill" [stroke]="stroke()" [isAnimationActive]="isAnimationActive()" [animationBegin]="animationBegin()" [animationDuration]="animationDuration()" [animationEasing]="animationEasing()" />
+          <svg:g
+            (click)="handleFunnelClick($event, segment, $index)"
+            (mouseenter)="handleFunnelMouseEnter($event, segment, $index)"
+            (mouseleave)="handleFunnelMouseLeave($event, segment, $index)"
+          >
+            <svg:g ngx-trapezoid [x]="segment.x" [y]="segment.y" [upperWidth]="segment.upperWidth" [lowerWidth]="segment.lowerWidth" [height]="segment.height" [fill]="segment.fill" [stroke]="stroke()" [isAnimationActive]="isAnimationActive()" [animationBegin]="animationBegin()" [animationDuration]="animationDuration()" [animationEasing]="animationEasing()" />
+          </svg:g>
         }
       }
     }
@@ -69,6 +83,41 @@ export class FunnelComponent implements OnDestroy {
   animationBegin = input<number>(0);
   animationDuration = input<number>(300);
   animationEasing = input<string>('ease');
+
+  // Event outputs
+  funnelClick = output<ChartMouseEvent>();
+  funnelMouseEnter = output<ChartMouseEvent>();
+  funnelMouseLeave = output<ChartMouseEvent>();
+
+  handleFunnelClick(event: MouseEvent, segment: FunnelSegment, index: number) {
+    this.funnelClick.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: segment,
+      index,
+      value: segment.value,
+    });
+  }
+
+  handleFunnelMouseEnter(event: MouseEvent, segment: FunnelSegment, index: number) {
+    this.funnelMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: segment,
+      index,
+      value: segment.value,
+    });
+  }
+
+  handleFunnelMouseLeave(event: MouseEvent, segment: FunnelSegment, index: number) {
+    this.funnelMouseLeave.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: segment,
+      index,
+      value: segment.value,
+    });
+  }
 
   // Chart dimensions (for plot area calculation)
   chartWidth = input<number>(400);

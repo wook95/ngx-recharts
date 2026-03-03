@@ -30,7 +30,8 @@ export class TooltipDirective implements OnInit, OnDestroy {
   labelStyle = input<Record<string, any>>({});
   
   private tooltipElement?: HTMLElement;
-  
+  private intervalId: ReturnType<typeof setInterval> | null = null;
+
   ngOnInit() {
     // Create tooltip element
     this.createTooltipElement();
@@ -40,6 +41,10 @@ export class TooltipDirective implements OnInit, OnDestroy {
   }
   
   ngOnDestroy() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
     if (this.tooltipElement) {
       this.renderer.removeChild(document.body, this.tooltipElement);
     }
@@ -73,7 +78,7 @@ export class TooltipDirective implements OnInit, OnDestroy {
     };
     
     // Simple polling for now (in real app, use proper reactive pattern)
-    setInterval(updateTooltip, 16); // 60fps
+    this.intervalId = setInterval(updateTooltip, 16); // 60fps
   }
   
   private showTooltip(coordinate: {x: number, y: number}, payload: TooltipPayload[], label: string) {
@@ -95,32 +100,40 @@ export class TooltipDirective implements OnInit, OnDestroy {
     this.renderer.setStyle(this.tooltipElement, 'visibility', 'hidden');
   }
   
+  private escapeHtml(str: string): string {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(String(str)));
+    return div.innerHTML;
+  }
+
   private generateTooltipContent(payload: TooltipPayload[], label: string): string {
     const contentStyles = this.getContentStyles();
     const labelStyles = this.getLabelStyles();
-    
+
     let html = `<div class="recharts-default-tooltip" style="${this.stylesToString(contentStyles)}">`;
-    
+
     // Label
     if (label) {
-      const displayLabel = this.labelFormatter() ? 
+      const displayLabel = this.labelFormatter() ?
         this.labelFormatter()!(label, payload) : label;
-      html += `<p class="recharts-tooltip-label" style="${this.stylesToString(labelStyles)}">${displayLabel}</p>`;
+      html += `<p class="recharts-tooltip-label" style="${this.stylesToString(labelStyles)}">${this.escapeHtml(String(displayLabel))}</p>`;
     }
-    
+
     // Items
     html += '<ul class="recharts-tooltip-item-list" style="padding: 0; margin: 0; list-style: none;">';
     payload.forEach(item => {
       const name = this.getItemName(item);
       const value = this.getItemValue(item);
-      html += `<li style="display: block; padding: 4px 0; color: ${item.color || '#000'};">`;
-      html += `<span>${name}</span>`;
-      html += `<span>${this.separator()}</span>`;
-      html += `<span>${value}</span>`;
+      const rawColor = item.color || '#000';
+      const safeColor = /^#[0-9a-fA-F]{3,8}$|^rgb\(/.test(rawColor) ? rawColor : '#000';
+      html += `<li style="display: block; padding: 4px 0; color: ${safeColor};">`;
+      html += `<span>${this.escapeHtml(String(name))}</span>`;
+      html += `<span>${this.escapeHtml(String(this.separator()))}</span>`;
+      html += `<span>${this.escapeHtml(String(value))}</span>`;
       html += '</li>';
     });
     html += '</ul></div>';
-    
+
     return html;
   }
   

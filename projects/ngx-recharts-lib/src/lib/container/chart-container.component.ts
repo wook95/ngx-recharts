@@ -7,9 +7,11 @@ import {
   ElementRef,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { TooltipComponent } from '../component/tooltip.component';
 import { DEFAULT_TOOLTIP_CONFIG, TooltipConfig } from '../core/tooltip-types';
+import { ChartMouseEvent } from '../core/event-types';
 import { ChartData, ChartMargin, getNumericDataValue } from '../core/types';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { TooltipService } from '../services/tooltip.service';
@@ -29,7 +31,9 @@ import { TOOLTIP_HIT_TEST_STRATEGY, TooltipHitTestStrategy } from '../services/t
     <div
       class="recharts-wrapper"
       (mousemove)="onMouseMove($event)"
+      (mouseenter)="onMouseEnter($event)"
       (mouseleave)="onMouseLeave($event)"
+      (click)="onClick($event)"
     >
       <ngx-recharts-surface [width]="chartWidth()" [height]="chartHeight()">
         <!-- Chart background -->
@@ -48,6 +52,18 @@ import { TOOLTIP_HIT_TEST_STRATEGY, TooltipHitTestStrategy } from '../services/t
           />
           <ng-content></ng-content>
         </svg:g>
+        @if (shouldShowCursor()) {
+          <svg:line
+            [attr.x1]="cursorX()"
+            [attr.y1]="margin().top"
+            [attr.x2]="cursorX()"
+            [attr.y2]="height() - margin().bottom"
+            [attr.stroke]="cursorStroke()"
+            [attr.stroke-width]="cursorStrokeWidth()"
+            [attr.stroke-dasharray]="cursorStrokeDasharray()"
+            class="recharts-cursor"
+          />
+        }
       </ngx-recharts-surface>
 
       <!-- Tooltip with service binding -->
@@ -122,6 +138,12 @@ export class ChartContainerComponent {
   private lastMouseMoveTime = 0;
   private currentDataIndex = -1;
 
+  // Chart-level event outputs
+  containerClick = output<ChartMouseEvent>();
+  containerMouseMove = output<ChartMouseEvent>();
+  containerMouseEnter = output<ChartMouseEvent>();
+  containerMouseLeave = output<ChartMouseEvent>();
+
   tooltipComponent = contentChild(TooltipComponent);
 
   data = input.required<ChartData[]>();
@@ -169,6 +191,35 @@ export class ChartContainerComponent {
       ...DEFAULT_TOOLTIP_CONFIG,
       ...this.tooltip(),
     };
+  });
+
+  // Cursor computed signals
+  shouldShowCursor = computed(() => {
+    const tooltipCfg = this.tooltipConfig();
+    if (!tooltipCfg || tooltipCfg.cursor === false) return false;
+    return !!(this._tooltipService && this._tooltipService.active());
+  });
+
+  cursorX = computed(() => {
+    return this._tooltipService ? this._tooltipService.coordinate().x : 0;
+  });
+
+  cursorStroke = computed(() => {
+    const cursor = this.tooltipConfig().cursor;
+    if (typeof cursor === 'object' && cursor?.stroke) return cursor.stroke;
+    return '#ccc';
+  });
+
+  cursorStrokeWidth = computed(() => {
+    const cursor = this.tooltipConfig().cursor;
+    if (typeof cursor === 'object' && cursor?.strokeWidth) return cursor.strokeWidth;
+    return 1;
+  });
+
+  cursorStrokeDasharray = computed(() => {
+    const cursor = this.tooltipConfig().cursor;
+    if (typeof cursor === 'object' && cursor?.strokeDasharray) return cursor.strokeDasharray;
+    return '3 3';
   });
 
   // Computed properties
@@ -256,6 +307,13 @@ export class ChartContainerComponent {
 
     const x = event.clientX - rect.left - offsetLeft;
     const y = event.clientY - rect.top - offsetTop;
+
+    this.containerMouseMove.emit({
+      nativeEvent: event,
+      payload: null,
+      index: -1,
+      coordinate: { x, y },
+    });
 
     // Check if mouse is within plot area (grid area)
     const plotWidth = this.plotWidth();
@@ -363,11 +421,53 @@ export class ChartContainerComponent {
       }));
   }
 
+  onMouseEnter(event: MouseEvent) {
+    const rect = this.elementRef.nativeElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    this.containerMouseEnter.emit({
+      nativeEvent: event,
+      payload: null,
+      index: -1,
+      coordinate: { x, y },
+    });
+  }
+
   onMouseLeave(event: MouseEvent) {
     this.currentDataIndex = -1; // Reset data index
     if (this._tooltipService) {
       this._tooltipService.hideTooltip();
     }
+
+    this.containerMouseLeave.emit({
+      nativeEvent: event,
+      payload: null,
+      index: -1,
+      coordinate: { x: 0, y: 0 },
+    });
+  }
+
+  onClick(event: MouseEvent) {
+    const rect = this.elementRef.nativeElement.getBoundingClientRect();
+    let offsetLeft = this.margin().left;
+    let offsetTop = this.margin().top;
+
+    if (this.responsiveService) {
+      const offset = this.responsiveService.totalOffset();
+      offsetLeft = offset.left;
+      offsetTop = offset.top;
+    }
+
+    const x = event.clientX - rect.left - offsetLeft;
+    const y = event.clientY - rect.top - offsetTop;
+
+    this.containerClick.emit({
+      nativeEvent: event,
+      payload: null,
+      index: -1,
+      coordinate: { x, y },
+    });
   }
 
   private handleLineAreaTooltip(

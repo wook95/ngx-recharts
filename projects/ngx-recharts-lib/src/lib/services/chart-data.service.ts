@@ -4,6 +4,7 @@ import { GraphicalItemRegistryService } from './graphical-item-registry.service'
 
 export type ChartType = 'line' | 'bar' | 'area' | 'composed' | 'pie' | 'radar' | 'radialBar' | 'scatter' | 'funnel';
 export type YDomainMode = 'unified' | 'independent';
+export type StackOffsetType = 'expand' | 'none' | 'wiggle' | 'silhouette' | 'sign';
 
 /**
  * Service to distribute chart-level data to child components via Angular hierarchical DI.
@@ -50,6 +51,10 @@ export class ChartDataService {
   private readonly _chartType = signal<ChartType>('line');
   private readonly _margin = signal<ChartMargin>({ top: 10, right: 5, bottom: 5, left: 5 });
   private readonly _yDomainMode = signal<YDomainMode>('unified');
+  private readonly _barSize = signal<number | undefined>(undefined);
+  private readonly _barGap = signal<number>(4);
+  private readonly _barCategoryGap = signal<string | number>('10%');
+  private readonly _stackOffset = signal<StackOffsetType>('none');
 
   /** Chart data array distributed from parent chart component */
   readonly data = this._data.asReadonly();
@@ -62,6 +67,18 @@ export class ChartDataService {
 
   /** Y-domain mode: 'unified' shares a single domain across all items, 'independent' lets each item compute its own */
   readonly yDomainMode = this._yDomainMode.asReadonly();
+
+  /** Bar size (width) distributed from parent chart component */
+  readonly barSize = this._barSize.asReadonly();
+
+  /** Gap between grouped bars distributed from parent chart component */
+  readonly barGap = this._barGap.asReadonly();
+
+  /** Gap between bar categories distributed from parent chart component */
+  readonly barCategoryGap = this._barCategoryGap.asReadonly();
+
+  /** Stack offset type for stacked bar/area charts */
+  readonly stackOffset = this._stackOffset.asReadonly();
 
   /**
    * Unified Y-domain computed across all visible graphical items.
@@ -109,5 +126,21 @@ export class ChartDataService {
 
   setYDomainMode(mode: YDomainMode): void {
     this._yDomainMode.set(mode);
+  }
+
+  setBarSize(value: number | undefined): void {
+    this._barSize.set(value);
+  }
+
+  setBarGap(value: number): void {
+    this._barGap.set(value);
+  }
+
+  setBarCategoryGap(value: string | number): void {
+    this._barCategoryGap.set(value);
+  }
+
+  setStackOffset(value: StackOffsetType): void {
+    this._stackOffset.set(value);
   }
 }

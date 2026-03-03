@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   input,
+  output,
 } from '@angular/core';
 import { arc } from 'd3-shape';
 
@@ -19,7 +20,10 @@ import { arc } from 'd3-shape';
         [attr.stroke]="stroke()"
         [attr.stroke-width]="strokeWidth()"
         [class]="className()"
-        [style]="animationStyle()" />
+        [style]="animationStyle()"
+        (click)="sectorClick.emit($event)"
+        (mouseenter)="sectorMouseEnter.emit($event)"
+        (mouseleave)="sectorMouseLeave.emit($event)" />
     }
   `,
 })
@@ -36,6 +40,10 @@ export class SectorComponent {
   stroke = input<string>('none');
   strokeWidth = input<number>(1);
   className = input<string>('');
+
+  sectorClick = output<MouseEvent>();
+  sectorMouseEnter = output<MouseEvent>();
+  sectorMouseLeave = output<MouseEvent>();
 
   // Animation inputs
   isAnimationActive = input<boolean>(true);

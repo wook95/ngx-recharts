@@ -6,7 +6,9 @@ import {
   effect,
   inject,
   input,
+  output,
 } from '@angular/core';
+import { ChartMouseEvent } from '../core/event-types';
 import { ChartDataService } from '../services/chart-data.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { PolarCoordinateService } from '../services/polar-coordinate.service';
@@ -25,17 +27,23 @@ interface RadarPoint {
   imports: [PolygonComponent, DotComponent],
   template: `
     @if (!hide()) {
-      <svg:g ngx-polygon
-        [points]="radarPoints()"
-        [fill]="fill()"
-        [fillOpacity]="fillOpacity()"
-        [stroke]="stroke()"
-        [strokeWidth]="strokeWidth()"
-        [isAnimationActive]="isAnimationActive()"
-        [animationBegin]="animationBegin()"
-        [animationDuration]="animationDuration()"
-        [animationEasing]="animationEasing()"
-      />
+      <svg:g
+        (click)="handleRadarClick($event)"
+        (mouseenter)="handleRadarMouseEnter($event)"
+        (mouseleave)="handleRadarMouseLeave($event)"
+      >
+        <svg:g ngx-polygon
+          [points]="radarPoints()"
+          [fill]="fill()"
+          [fillOpacity]="fillOpacity()"
+          [stroke]="stroke()"
+          [strokeWidth]="strokeWidth()"
+          [isAnimationActive]="isAnimationActive()"
+          [animationBegin]="animationBegin()"
+          [animationDuration]="animationDuration()"
+          [animationEasing]="animationEasing()"
+        />
+      </svg:g>
       @if (dot()) {
         @for (point of radarPoints(); track $index) {
           <svg:g ngx-dot
@@ -100,6 +108,38 @@ export class RadarComponent implements OnDestroy {
   animationBegin = input<number>(0);
   animationDuration = input<number>(300);
   animationEasing = input<string>('ease');
+
+  // Event outputs
+  radarClick = output<ChartMouseEvent>();
+  radarMouseEnter = output<ChartMouseEvent>();
+  radarMouseLeave = output<ChartMouseEvent>();
+
+  handleRadarClick(event: MouseEvent) {
+    this.radarClick.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleRadarMouseEnter(event: MouseEvent) {
+    this.radarMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleRadarMouseLeave(event: MouseEvent) {
+    this.radarMouseLeave.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
 
   resolvedData = computed(() => {
     const explicit = this.data();

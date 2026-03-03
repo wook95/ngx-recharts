@@ -136,3 +136,32 @@ export const CleanAPI: Story = {
     height: 400,
   },
 };
+
+export const Interactive: Story = {
+  render: (args) => ({
+    props: {
+      ...args,
+      onChartClick: (event: any) => console.log('Chart clicked:', event),
+      onChartMouseMove: (event: any) => console.log('Mouse move:', event),
+    },
+    template: `
+      <ngx-bar-chart
+        [data]="data"
+        [width]="width"
+        [height]="height"
+        (chartClick)="onChartClick($event)"
+        (chartMouseMove)="onChartMouseMove($event)"
+      >
+        <svg:g ngx-cartesian-grid strokeDasharray="3 3"></svg:g>
+        <svg:g ngx-x-axis [data]="data" dataKey="name" [chartType]="'bar'"></svg:g>
+        <svg:g ngx-y-axis [data]="data" dataKey="uv"></svg:g>
+        <svg:g ngx-bar [data]="data" dataKey="uv" fill="#8884d8"></svg:g>
+      </ngx-bar-chart>
+    `,
+  }),
+  args: {
+    data: pageData,
+    width: 600,
+    height: 400,
+  },
+};

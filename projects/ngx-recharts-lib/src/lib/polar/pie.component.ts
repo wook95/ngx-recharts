@@ -7,8 +7,10 @@ import {
   effect,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { pie as d3Pie } from 'd3-shape';
+import { ChartMouseEvent } from '../core/event-types';
 import { PolarCoordinateService } from '../services/polar-coordinate.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { ChartDataService } from '../services/chart-data.service';
@@ -49,6 +51,9 @@ export interface PieSectorData {
           [animationBegin]="animationBegin()"
           [animationDuration]="animationDuration()"
           [animationEasing]="animationEasing()"
+          (sectorClick)="handleSectorClick($event, sector, $index)"
+          (sectorMouseEnter)="handleSectorMouseEnter($event, sector, $index)"
+          (sectorMouseLeave)="handleSectorMouseLeave($event, sector, $index)"
         />
       }
     }
@@ -89,6 +94,10 @@ export class PieComponent implements OnDestroy {
   animationBegin = input<number>(0);
   animationDuration = input<number>(300);
   animationEasing = input<string>('ease');
+
+  pieClick = output<ChartMouseEvent>();
+  pieMouseEnter = output<ChartMouseEvent>();
+  pieMouseLeave = output<ChartMouseEvent>();
 
   cells = contentChildren(CellComponent);
 
@@ -178,4 +187,34 @@ export class PieComponent implements OnDestroy {
       };
     });
   });
+
+  handleSectorClick(event: MouseEvent, sectorData: any, index: number) {
+    this.pieClick.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: sectorData,
+      index,
+      value: sectorData?.value,
+    });
+  }
+
+  handleSectorMouseEnter(event: MouseEvent, sectorData: any, index: number) {
+    this.pieMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: sectorData,
+      index,
+      value: sectorData?.value,
+    });
+  }
+
+  handleSectorMouseLeave(event: MouseEvent, sectorData: any, index: number) {
+    this.pieMouseLeave.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: sectorData,
+      index,
+      value: sectorData?.value,
+    });
+  }
 }

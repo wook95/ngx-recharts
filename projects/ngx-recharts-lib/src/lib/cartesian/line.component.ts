@@ -6,9 +6,11 @@ import {
   inject,
   input,
   OnDestroy,
+  output,
 } from '@angular/core';
 import { line as d3Line, curveLinear, curveMonotoneX, curveCardinal, curveBasis, curveStep, curveStepBefore, curveStepAfter, curveBasisClosed, curveBasisOpen, curveLinearClosed, curveBumpX, curveBumpY, curveNatural, curveMonotoneY } from 'd3-shape';
 import { ChartData, getNumericDataValue } from '../core/types';
+import { ChartMouseEvent } from '../core/event-types';
 import { ScaleService } from '../services/scale.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
@@ -117,7 +119,7 @@ export class LineComponent implements OnDestroy {
   data = input<ChartData[]>([]);
 
   // Interpolation type
-  type = input<'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' | ((context: any) => any)>('linear');
+  type = input<'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'cardinal' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' | ((context: any) => any)>('linear');
 
   // Axis IDs
   xAxisId = input<string | number>(0);
@@ -178,14 +180,32 @@ export class LineComponent implements OnDestroy {
   // Event handlers
   onAnimationStart = input<(() => void) | undefined>(undefined);
   onAnimationEnd = input<(() => void) | undefined>(undefined);
+  /** @deprecated Use (lineClick) output instead */
   onClick = input<((event: Event) => void) | undefined>(undefined);
+  /** @deprecated Use (lineMouseDown) output instead */
   onMouseDown = input<((event: MouseEvent) => void) | undefined>(undefined);
+  /** @deprecated Use (lineMouseUp) output instead */
   onMouseUp = input<((event: MouseEvent) => void) | undefined>(undefined);
+  /** @deprecated Use (lineMouseMove) output instead */
   onMouseMove = input<((event: MouseEvent) => void) | undefined>(undefined);
+  /** @deprecated Use (lineMouseOver) output instead */
   onMouseOver = input<((event: MouseEvent) => void) | undefined>(undefined);
+  /** @deprecated Use (lineMouseOut) output instead */
   onMouseOut = input<((event: MouseEvent) => void) | undefined>(undefined);
+  /** @deprecated Use (lineMouseEnter) output instead */
   onMouseEnter = input<((event: MouseEvent) => void) | undefined>(undefined);
+  /** @deprecated Use (lineMouseLeave) output instead */
   onMouseLeave = input<((event: MouseEvent) => void) | undefined>(undefined);
+
+  // Angular output() event emitters (preferred API)
+  lineClick = output<ChartMouseEvent>();
+  lineMouseDown = output<ChartMouseEvent>();
+  lineMouseUp = output<ChartMouseEvent>();
+  lineMouseMove = output<ChartMouseEvent>();
+  lineMouseOver = output<ChartMouseEvent>();
+  lineMouseOut = output<ChartMouseEvent>();
+  lineMouseEnter = output<ChartMouseEvent>();
+  lineMouseLeave = output<ChartMouseEvent>();
 
   // Chart dimensions
   chartWidth = input<number>(400);
@@ -242,7 +262,7 @@ export class LineComponent implements OnDestroy {
         )
       : null;
 
-    return data.map((item, index) => {
+    const mappedPoints = data.map((item, index) => {
       const value = getNumericDataValue(item, dataKey as string);
 
       let x: number;
@@ -264,6 +284,12 @@ export class LineComponent implements OnDestroy {
         payload: item,
       };
     });
+
+    const connectNulls = this.connectNulls();
+    if (connectNulls) {
+      return mappedPoints.filter(p => p.value != null && !isNaN(p.value));
+    }
+    return mappedPoints;
   });
 
   // Use provided points or calculated points
@@ -281,6 +307,7 @@ export class LineComponent implements OnDestroy {
       case 'bumpX': return curveBumpX;
       case 'bumpY': return curveBumpY;
       case 'bump': return curveBumpX;
+      case 'cardinal': return curveCardinal;
       case 'linearClosed': return curveLinearClosed;
       case 'natural': return curveNatural;
       case 'monotoneX': return curveMonotoneX;
@@ -298,11 +325,14 @@ export class LineComponent implements OnDestroy {
     if (points.length === 0) return '';
     const curveType = this.type();
     const curveFn = typeof curveType === 'function' ? curveType : this.getCurveFunction();
-    const line = d3Line<LinePoint>()
+    const lineGen = d3Line<LinePoint>()
       .x(d => d.x)
       .y(d => d.y)
       .curve(curveFn);
-    return line(points) || '';
+    if (!this.connectNulls()) {
+      lineGen.defined(d => d.value != null && !isNaN(d.value));
+    }
+    return lineGen(points) || '';
   });
 
   // Dot configuration
@@ -364,43 +394,91 @@ export class LineComponent implements OnDestroy {
 
   // Event handler methods
   handleClick(event: Event) {
-    const handler = this.onClick();
-    if (handler) handler(event);
+    const chartEvent: ChartMouseEvent = {
+      nativeEvent: event as MouseEvent,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    };
+    this.lineClick.emit(chartEvent);
+    this.onClick()?.(event);
   }
 
   handleMouseDown(event: MouseEvent) {
-    const handler = this.onMouseDown();
-    if (handler) handler(event);
+    const chartEvent: ChartMouseEvent = {
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    };
+    this.lineMouseDown.emit(chartEvent);
+    this.onMouseDown()?.(event);
   }
 
   handleMouseUp(event: MouseEvent) {
-    const handler = this.onMouseUp();
-    if (handler) handler(event);
+    const chartEvent: ChartMouseEvent = {
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    };
+    this.lineMouseUp.emit(chartEvent);
+    this.onMouseUp()?.(event);
   }
 
   handleMouseMove(event: MouseEvent) {
-    const handler = this.onMouseMove();
-    if (handler) handler(event);
+    const chartEvent: ChartMouseEvent = {
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    };
+    this.lineMouseMove.emit(chartEvent);
+    this.onMouseMove()?.(event);
   }
 
   handleMouseOver(event: MouseEvent) {
-    const handler = this.onMouseOver();
-    if (handler) handler(event);
+    const chartEvent: ChartMouseEvent = {
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    };
+    this.lineMouseOver.emit(chartEvent);
+    this.onMouseOver()?.(event);
   }
 
   handleMouseOut(event: MouseEvent) {
-    const handler = this.onMouseOut();
-    if (handler) handler(event);
+    const chartEvent: ChartMouseEvent = {
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    };
+    this.lineMouseOut.emit(chartEvent);
+    this.onMouseOut()?.(event);
   }
 
   handleMouseEnter(event: MouseEvent) {
-    const handler = this.onMouseEnter();
-    if (handler) handler(event);
+    const chartEvent: ChartMouseEvent = {
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    };
+    this.lineMouseEnter.emit(chartEvent);
+    this.onMouseEnter()?.(event);
   }
 
   handleMouseLeave(event: MouseEvent) {
-    const handler = this.onMouseLeave();
-    if (handler) handler(event);
+    const chartEvent: ChartMouseEvent = {
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    };
+    this.lineMouseLeave.emit(chartEvent);
+    this.onMouseLeave()?.(event);
   }
 
   // Get active point for tooltip

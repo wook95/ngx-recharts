@@ -2,18 +2,21 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
 } from '@angular/core';
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
 import { RectangleComponent } from '../shape/rectangle.component';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 
 @Component({
   selector: 'ngx-treemap',
   standalone: true,
   imports: [RectangleComponent],
+  providers: [ResponsiveContainerService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg [attr.width]="width()" [attr.height]="height()" [attr.viewBox]="'0 0 ' + width() + ' ' + height()">
+    <svg [attr.width]="actualWidth()" [attr.height]="actualHeight()" [attr.viewBox]="'0 0 ' + actualWidth() + ' ' + actualHeight()">
       @for (node of nodes(); track $index) {
         <svg:g ngx-rectangle
           [x]="node.x"
@@ -40,6 +43,8 @@ import { RectangleComponent } from '../shape/rectangle.component';
 export class TreemapComponent {
   readonly Math = Math;
 
+  private responsiveService = inject(ResponsiveContainerService, { optional: true });
+
   data = input<any[]>([]);
   dataKey = input<string>('value');
   nameKey = input<string>('name');
@@ -58,6 +63,15 @@ export class TreemapComponent {
     '#E2CF45',
     '#F8C12D',
   ]);
+
+  actualWidth = computed(() => {
+    const responsiveWidth = this.responsiveService?.width() ?? 0;
+    return responsiveWidth > 0 ? responsiveWidth : this.width();
+  });
+  actualHeight = computed(() => {
+    const responsiveHeight = this.responsiveService?.height() ?? 0;
+    return responsiveHeight > 0 ? responsiveHeight : this.height();
+  });
 
   nodes = computed(() => {
     const data = this.data();

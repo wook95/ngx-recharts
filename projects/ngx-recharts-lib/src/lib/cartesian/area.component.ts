@@ -6,28 +6,35 @@ import {
   inject,
   input,
   OnDestroy,
+  output,
 } from '@angular/core';
 import { ChartData, getNumericDataValue } from '../core/types';
+import { ChartMouseEvent } from '../core/event-types';
 import { ScaleService } from '../services/scale.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
+import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { createChartDimensions } from '../shared/chart-dimensions';
 import { ChartDataService } from '../services/chart-data.service';
-import { 
-  line as d3Line, 
-  area as d3Area, 
-  curveLinear, 
-  curveMonotoneX, 
-  curveCardinal, 
-  curveBasis, 
-  curveStep, 
-  curveStepBefore, 
-  curveStepAfter 
+import {
+  line as d3Line,
+  area as d3Area,
+  curveLinear,
+  curveMonotoneX,
+  curveCardinal,
+  curveBasis,
+  curveStep,
+  curveStepBefore,
+  curveStepAfter,
+  stack as d3Stack,
 } from 'd3-shape';
+import { getD3StackOffset } from '../shared/d3-helpers';
 
 export interface AreaPoint {
   x: number;
   y: number;
+  /** Baseline y-coordinate for stacked areas; equals plotArea.height when not stacked */
+  y0: number;
   value: any;
   payload: ChartData;
 }
@@ -45,7 +52,10 @@ export interface AreaPoint {
         [attr.fill]="fill()"
         [attr.fill-opacity]="fillOpacity()"
         [attr.stroke]="stroke()"
-        [attr.stroke-width]="strokeWidth()" />
+        [attr.stroke-width]="strokeWidth()"
+        (click)="handleAreaClick($event)"
+        (mouseenter)="handleAreaMouseEnter($event)"
+        (mouseleave)="handleAreaMouseLeave($event)" />
       
       <!-- Line path -->
       @if (stroke() !== 'none') {
@@ -70,12 +80,28 @@ export interface AreaPoint {
             [attr.stroke-width]="1" />
         }
       }
+
+      <!-- Active Dot (shown when tooltip is active) -->
+      @if (shouldShowActiveDot() && activePointIndex() !== -1) {
+        @let activePoint = points()[activePointIndex()];
+        @if (activePoint) {
+          <svg:circle
+            class="recharts-area-active-dot"
+            [attr.cx]="activePoint.x"
+            [attr.cy]="activePoint.y"
+            [attr.r]="activeDotProps().r || 6"
+            [attr.fill]="activeDotProps().fill || '#fff'"
+            [attr.stroke]="activeDotProps().stroke || stroke()"
+            [attr.stroke-width]="activeDotProps().strokeWidth || 2" />
+        }
+      }
     }
   `
 })
 export class AreaComponent implements OnDestroy {
   private scaleService = inject(ScaleService);
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
+  private tooltipService = inject(CHART_TOOLTIP_SERVICE, { optional: true });
   private registryService = inject(GraphicalItemRegistryService, { optional: true });
   private chartDataService = inject(ChartDataService, { optional: true });
 
@@ -112,6 +138,8 @@ export class AreaComponent implements OnDestroy {
   strokeWidth = input<number>(1);
   dot = input<boolean>(false);
   dotSize = input<number>(3);
+  connectNulls = input<boolean>(false);
+  activeDot = input<boolean | Record<string, any> | any>(false);
   hide = input<boolean>(false);
   type = input<'linear' | 'monotone' | 'basis' | 'cardinal' | 'step' | 'stepBefore' | 'stepAfter'>('linear');
   name = input<string | number | undefined>(undefined);
@@ -119,6 +147,10 @@ export class AreaComponent implements OnDestroy {
   yAxisId = input<string | number>(0);
   stackId = input<string | undefined>(undefined);
   categoryKey = input<string>('name');
+
+  areaClick = output<ChartMouseEvent>();
+  areaMouseEnter = output<ChartMouseEvent>();
+  areaMouseLeave = output<ChartMouseEvent>();
 
   // Chart dimensions
   chartWidth = input<number>(400);
@@ -172,7 +204,73 @@ export class AreaComponent implements OnDestroy {
         )
       : null;
 
-    return data.map((item, index) => {
+    const myStackId = this.stackId();
+    const currentStackOffset = this.chartDataService?.stackOffset() ?? 'none';
+
+    // d3-stack path: use d3 stack for non-default offset when stacked
+    if (myStackId && currentStackOffset !== 'none') {
+      const stackedAreas = this.registryService?.getItemsByType('area')
+        .filter(item => !item.hide && item.stackId === myStackId) ?? [];
+      const myStackIndex = stackedAreas.findIndex(item => item.id === this.itemId);
+      const resolvedIndex = myStackIndex === -1 ? 0 : myStackIndex;
+
+      const stackKeys = stackedAreas.map(a => a.dataKey);
+      const d3OffsetFn = getD3StackOffset(currentStackOffset);
+
+      const stackGenerator = d3Stack<ChartData>()
+        .keys(stackKeys)
+        .value((d, key) => getNumericDataValue(d, key))
+        .offset(d3OffsetFn);
+
+      const stackedSeries = stackGenerator(data);
+      const mySeries = stackedSeries[resolvedIndex];
+      if (!mySeries) return [];
+
+      // Compute y-scale domain from stacked data
+      let stackMin = Infinity;
+      let stackMax = -Infinity;
+      for (const series of stackedSeries) {
+        for (const point of series) {
+          if (point[0] < stackMin) stackMin = point[0];
+          if (point[1] > stackMax) stackMax = point[1];
+        }
+      }
+      const stackYScale = this.scaleService.createLinearScale(
+        [Math.min(0, stackMin), stackMax],
+        [plotArea.height, 0]
+      );
+
+      const connectNulls = this.connectNulls();
+      const mappedPoints = data.map((item, index) => {
+        const value = getNumericDataValue(item, dataKey);
+        const [y0Val, y1Val] = mySeries[index];
+
+        let x: number;
+        if (bandScale) {
+          const bandX = bandScale(String(item[ck] || '')) ?? 0;
+          x = bandX + bandScale.bandwidth() / 2;
+        } else {
+          x = xScale!(index);
+        }
+
+        return {
+          x: Number(x.toFixed(1)),
+          y: Number(stackYScale(y1Val).toFixed(1)),
+          y0: Number(stackYScale(y0Val).toFixed(1)),
+          value,
+          payload: item,
+        };
+      });
+
+      if (connectNulls) {
+        return mappedPoints.filter(p => p.value != null && !isNaN(p.value));
+      }
+      return mappedPoints;
+    }
+
+    // Default path: no d3 stack (preserves existing behavior)
+    const connectNulls = this.connectNulls();
+    const mappedPoints = data.map((item, index) => {
       const value = getNumericDataValue(item, dataKey);
 
       let x: number;
@@ -190,10 +288,16 @@ export class AreaComponent implements OnDestroy {
       return {
         x: Number(x.toFixed(1)),
         y: Number(y.toFixed(1)),
+        y0: plotArea.height,
         value,
         payload: item,
       };
     });
+
+    if (connectNulls) {
+      return mappedPoints.filter(p => p.value != null && !isNaN(p.value));
+    }
+    return mappedPoints;
   });
   
   // Get curve function based on type
@@ -224,16 +328,79 @@ export class AreaComponent implements OnDestroy {
   
   areaPath = computed(() => {
     const points = this.points();
-    const plotArea = this.plotArea();
-    
+
     if (points.length === 0) return '';
-    
+
     const area = d3Area<AreaPoint>()
       .x(d => d.x)
-      .y0(plotArea.height)  // baseline at bottom
-      .y1(d => d.y)         // top line follows data
+      .y0(d => d.y0)  // baseline: per-point y0 (plotArea.height for non-stacked, stacked baseline otherwise)
+      .y1(d => d.y)    // top line follows data
       .curve(this.getCurveFunction());
-    
+
     return area(points) || '';
   });
+
+  // Active dot configuration
+  shouldShowActiveDot = computed(() => {
+    return this.activeDot() !== false;
+  });
+
+  activeDotProps = computed(() => {
+    const config = this.activeDot();
+    if (typeof config === 'object' && config !== null) {
+      return config;
+    }
+    return { r: 6, stroke: this.stroke(), strokeWidth: 2, fill: '#fff' };
+  });
+
+  // Active point index from tooltip service
+  activePointIndex = computed(() => {
+    if (!this.tooltipService) return -1;
+
+    const isActive = this.tooltipService.active();
+    if (!isActive) return -1;
+
+    const points = this.points();
+    const tooltipX = this.tooltipService.coordinate().x;
+
+    let closestIndex = -1;
+    let minDistance = Infinity;
+
+    points.forEach((point, index) => {
+      const distance = Math.abs(point.x - tooltipX);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    return closestIndex;
+  });
+
+  handleAreaClick(event: MouseEvent) {
+    this.areaClick.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleAreaMouseEnter(event: MouseEvent) {
+    this.areaMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleAreaMouseLeave(event: MouseEvent) {
+    this.areaMouseLeave.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
 }

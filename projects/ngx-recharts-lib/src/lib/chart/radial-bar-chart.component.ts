@@ -5,9 +5,11 @@ import {
   effect,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
+import { ChartMouseEvent } from '../core/event-types';
 import { ChartData, ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
@@ -49,6 +51,10 @@ import { PolarLabelListContextService } from '../context/label-list-context.serv
         [width]="actualWidth()"
         [height]="actualHeight()"
         [tooltip]="tooltip()"
+        (containerClick)="chartClick.emit($event)"
+        (containerMouseMove)="chartMouseMove.emit($event)"
+        (containerMouseEnter)="chartMouseEnter.emit($event)"
+        (containerMouseLeave)="chartMouseLeave.emit($event)"
       >
         <ng-content></ng-content>
       </ngx-chart-container>
@@ -59,6 +65,12 @@ export class RadialBarChartComponent {
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
   private chartDataService = inject(ChartDataService);
   private polarService = inject(PolarCoordinateService);
+
+  // Chart-level event outputs
+  chartClick = output<ChartMouseEvent>();
+  chartMouseMove = output<ChartMouseEvent>();
+  chartMouseEnter = output<ChartMouseEvent>();
+  chartMouseLeave = output<ChartMouseEvent>();
 
   // Inputs
   data = input<any[]>([]);

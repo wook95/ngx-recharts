@@ -6,7 +6,9 @@ import {
   inject,
   input,
   OnDestroy,
+  output,
 } from '@angular/core';
+import { ChartMouseEvent } from '../core/event-types';
 import { SectorComponent } from '../shape/sector.component';
 import { ChartDataService } from '../services/chart-data.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
@@ -60,6 +62,9 @@ export interface RadialBarEntry {
           [animationBegin]="animationBegin()"
           [animationDuration]="animationDuration()"
           [animationEasing]="animationEasing()"
+          (sectorClick)="handleRadialBarClick($event, bar, $index)"
+          (sectorMouseEnter)="handleRadialBarMouseEnter($event, bar, $index)"
+          (sectorMouseLeave)="handleRadialBarMouseLeave($event, bar, $index)"
         />
       }
     }
@@ -111,6 +116,41 @@ export class RadialBarComponent implements OnDestroy {
   animationBegin = input<number>(0);
   animationDuration = input<number>(300);
   animationEasing = input<string>('ease');
+
+  // Event outputs
+  radialBarClick = output<ChartMouseEvent>();
+  radialBarMouseEnter = output<ChartMouseEvent>();
+  radialBarMouseLeave = output<ChartMouseEvent>();
+
+  handleRadialBarClick(event: MouseEvent, barData: RadialBarEntry, index: number) {
+    this.radialBarClick.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: barData,
+      index,
+      value: barData.value,
+    });
+  }
+
+  handleRadialBarMouseEnter(event: MouseEvent, barData: RadialBarEntry, index: number) {
+    this.radialBarMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: barData,
+      index,
+      value: barData.value,
+    });
+  }
+
+  handleRadialBarMouseLeave(event: MouseEvent, barData: RadialBarEntry, index: number) {
+    this.radialBarMouseLeave.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: barData,
+      index,
+      value: barData.value,
+    });
+  }
 
   resolvedCx = computed(() => this.cx() ?? this.polarService?.cx() ?? 0);
   resolvedCy = computed(() => this.cy() ?? this.polarService?.cy() ?? 0);

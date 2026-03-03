@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
 } from '@angular/core';
 import { hierarchy, partition } from 'd3-hierarchy';
 import { scaleLinear, scaleSqrt } from 'd3-scale';
 import { SectorComponent } from '../shape/sector.component';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 
 const DEPTH_COLORS = [
   ['#8884d8', '#a29bfe', '#6c5ce7', '#5a4fcf', '#4834d4'],
@@ -19,9 +21,10 @@ const DEPTH_COLORS = [
   selector: 'ngx-sunburst-chart',
   standalone: true,
   imports: [SectorComponent],
+  providers: [ResponsiveContainerService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg [attr.width]="width()" [attr.height]="height()">
+    <svg [attr.width]="actualWidth()" [attr.height]="actualHeight()">
       <svg:g [attr.transform]="'translate(' + resolvedCx() + ',' + resolvedCy() + ')'">
         @for (sector of sectors(); track $index) {
           <svg:g ngx-sector
@@ -43,6 +46,8 @@ const DEPTH_COLORS = [
 export class SunburstChartComponent {
   readonly Math = Math;
 
+  private responsiveService = inject(ResponsiveContainerService, { optional: true });
+
   data = input<any>(null);
   dataKey = input<string>('value');
   nameKey = input<string>('name');
@@ -55,6 +60,15 @@ export class SunburstChartComponent {
   fill = input<string>('#8884d8');
   stroke = input<string>('#fff');
   strokeWidth = input<number>(1);
+
+  actualWidth = computed(() => {
+    const responsiveWidth = this.responsiveService?.width() ?? 0;
+    return responsiveWidth > 0 ? responsiveWidth : this.width();
+  });
+  actualHeight = computed(() => {
+    const responsiveHeight = this.responsiveService?.height() ?? 0;
+    return responsiveHeight > 0 ? responsiveHeight : this.height();
+  });
 
   resolvedCx = computed(() => this.cx() ?? this.width() / 2);
   resolvedCy = computed(() => this.cy() ?? this.height() / 2);

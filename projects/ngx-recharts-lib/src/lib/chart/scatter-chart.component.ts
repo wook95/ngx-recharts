@@ -5,9 +5,11 @@ import {
   effect,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
+import { ChartMouseEvent } from '../core/event-types';
 import { ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
@@ -50,6 +52,10 @@ import { CartesianLabelListContextService } from '../context/label-list-context.
         [margin]="margin()"
         [chartType]="'scatter'"
         [tooltip]="tooltip()"
+        (containerClick)="chartClick.emit($event)"
+        (containerMouseMove)="chartMouseMove.emit($event)"
+        (containerMouseEnter)="chartMouseEnter.emit($event)"
+        (containerMouseLeave)="chartMouseLeave.emit($event)"
       >
         <ng-content></ng-content>
       </ngx-chart-container>
@@ -61,6 +67,12 @@ export class ScatterChartComponent {
     optional: true,
   });
   private chartDataService = inject(ChartDataService);
+
+  // Chart-level event outputs
+  chartClick = output<ChartMouseEvent>();
+  chartMouseMove = output<ChartMouseEvent>();
+  chartMouseEnter = output<ChartMouseEvent>();
+  chartMouseLeave = output<ChartMouseEvent>();
 
   constructor() {
     if (this.responsiveService) {

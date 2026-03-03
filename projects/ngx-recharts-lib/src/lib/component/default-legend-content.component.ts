@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, computed, output } from '@angular/core';
 
 import { LegendPayload, LegendAlign, LegendVerticalAlign, LegendLayout } from './legend.component';
+import { LegendClickEvent } from '../core/event-types';
 
 @Component({
   selector: 'ngx-default-legend-content',
@@ -112,10 +113,18 @@ export class DefaultLegendContentComponent {
   inactiveColor = input<string>('#ccc');
   formatter = input<(value: any, entry: LegendPayload, index: number) => any>();
   
-  // Event handlers
+  // Event handlers (deprecated: use Angular outputs instead)
+  /** @deprecated Use legendItemClick output instead */
   onClick = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  /** @deprecated Use legendItemMouseEnter output instead */
   onMouseEnter = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+  /** @deprecated Use legendItemMouseLeave output instead */
   onMouseLeave = input<(data: LegendPayload, index: number, event: MouseEvent) => void>();
+
+  // Angular outputs
+  legendItemClick = output<LegendClickEvent>();
+  legendItemMouseEnter = output<LegendClickEvent>();
+  legendItemMouseLeave = output<LegendClickEvent>();
 
   // Computed styles
   listStyle = computed(() => ({
@@ -153,19 +162,40 @@ export class DefaultLegendContentComponent {
     if (clickHandler) {
       clickHandler(entry, index, event);
     }
+    this.legendItemClick.emit({
+      dataKey: entry.dataKey ?? String(entry.value),
+      type: entry.type ?? 'rect',
+      color: this.getColor(entry),
+      inactive: entry.inactive ?? false,
+      index
+    });
   }
-  
+
   handleMouseEnter(entry: LegendPayload, index: number, event: MouseEvent): void {
     const enterHandler = this.onMouseEnter();
     if (enterHandler) {
       enterHandler(entry, index, event);
     }
+    this.legendItemMouseEnter.emit({
+      dataKey: entry.dataKey ?? String(entry.value),
+      type: entry.type ?? 'rect',
+      color: this.getColor(entry),
+      inactive: entry.inactive ?? false,
+      index
+    });
   }
-  
+
   handleMouseLeave(entry: LegendPayload, index: number, event: MouseEvent): void {
     const leaveHandler = this.onMouseLeave();
     if (leaveHandler) {
       leaveHandler(entry, index, event);
     }
+    this.legendItemMouseLeave.emit({
+      dataKey: entry.dataKey ?? String(entry.value),
+      type: entry.type ?? 'rect',
+      color: this.getColor(entry),
+      inactive: entry.inactive ?? false,
+      index
+    });
   }
 }

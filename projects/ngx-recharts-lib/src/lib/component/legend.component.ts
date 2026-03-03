@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, inject, computed, Optional } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, input, inject, computed, output } from '@angular/core';
 
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { DefaultLegendContentComponent } from './default-legend-content.component';
+import { LegendClickEvent } from '../core/event-types';
 
 export type LegendLayout = 'horizontal' | 'vertical';
 export type LegendAlign = 'left' | 'center' | 'right';
@@ -24,7 +24,7 @@ export interface LegendPayload {
 @Component({
   selector: 'ngx-legend',
   standalone: true,
-  imports: [CommonModule, DefaultLegendContentComponent],
+  imports: [DefaultLegendContentComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="recharts-legend-wrapper" [style]="wrapperStyle()">
@@ -35,13 +35,21 @@ export interface LegendPayload {
         [verticalAlign]="verticalAlign()"
         [iconSize]="iconSize()"
         [iconType]="iconType()"
-        [formatter]="formatter()">
+        [formatter]="formatter()"
+        (legendItemClick)="legendClick.emit($event)"
+        (legendItemMouseEnter)="legendMouseEnter.emit($event)"
+        (legendItemMouseLeave)="legendMouseLeave.emit($event)">
       </ngx-default-legend-content>
     </div>
   `
 })
 export class LegendComponent {
   private registry = inject(GraphicalItemRegistryService, { optional: true });
+
+  // Outputs
+  legendClick = output<LegendClickEvent>();
+  legendMouseEnter = output<LegendClickEvent>();
+  legendMouseLeave = output<LegendClickEvent>();
 
   // Inputs
   layout = input<LegendLayout>('horizontal');

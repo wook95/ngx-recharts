@@ -27,7 +27,7 @@ export interface TooltipConfig {
   labelStyle?: Record<string, any>;
   
   // Cursor properties
-  cursor?: boolean | Record<string, any> | any;
+  cursor?: boolean | { stroke?: string; strokeWidth?: number; strokeDasharray?: string };
   
   // ViewBox properties
   viewBox?: TooltipViewBox;

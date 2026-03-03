@@ -106,3 +106,31 @@ export const TwoPies: Story = {
     height: 500,
   },
 };
+
+export const Interactive: Story = {
+  render: (args) => ({
+    props: {
+      ...args,
+      data01,
+      onChartClick: (event: any) => console.log('Chart clicked:', event),
+      onChartMouseMove: (event: any) => console.log('Mouse move:', event),
+    },
+    template: `
+      <ngx-pie-chart
+        [data]="data01"
+        [width]="width"
+        [height]="height"
+        (chartClick)="onChartClick($event)"
+        (chartMouseMove)="onChartMouseMove($event)"
+      >
+        <svg:g ngx-pie [data]="data01" dataKey="value" nameKey="name"
+          [outerRadius]="80" fill="#8884d8" [label]="true">
+        </svg:g>
+      </ngx-pie-chart>
+    `,
+  }),
+  args: {
+    width: 400,
+    height: 400,
+  },
+};

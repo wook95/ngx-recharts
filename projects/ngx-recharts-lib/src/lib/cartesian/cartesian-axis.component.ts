@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   input,
+  OnDestroy,
 } from '@angular/core';
 import { AxisOrientation, AxisType } from '../core/axis-types';
 import { ChartData } from '../core/types';
@@ -12,6 +13,7 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
 import { ScaleService } from '../services/scale.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { ChartDataService } from '../services/chart-data.service';
+import { AxisRegistryService } from '../services/axis-registry.service';
 
 export interface ViewBox {
   x: number;
@@ -61,11 +63,12 @@ export interface ViewBox {
         } @if (showTick()) {
         <svg:text
           class="recharts-cartesian-axis-tick-value"
-          [attr.x]="textPosition().x"
-          [attr.y]="textPosition().y"
+          [attr.x]="textPosition().x + dx()"
+          [attr.y]="textPosition().y + dy()"
           [attr.text-anchor]="textAnchor()"
           [attr.dominant-baseline]="textBaseline()"
           [attr.fill]="textStyle().fill"
+          [attr.transform]="angle() !== 0 ? 'rotate(' + angle() + ', ' + (textPosition().x + dx()) + ', ' + (textPosition().y + dy()) + ')' : null"
         >
           {{ formatTick(tick.value) }}
         </svg:text>
@@ -89,13 +92,14 @@ export interface ViewBox {
     </svg:g>
   `,
 })
-export class CartesianAxisComponent {
+export class CartesianAxisComponent implements OnDestroy {
   private scaleService = inject(ScaleService);
   private responsiveService = inject(ResponsiveContainerService, {
     optional: true,
   });
   private registryService = inject(GraphicalItemRegistryService, { optional: true });
   private chartDataService = inject(ChartDataService, { optional: true });
+  private axisRegistryService = inject(AxisRegistryService, { optional: true });
 
   // Recharts CartesianAxis API
   x = input<number>(0);
@@ -126,6 +130,17 @@ export class CartesianAxisComponent {
   data = input<ChartData[]>([]);
   chartType = input<'line' | 'area' | 'bar' | 'composed'>('bar');
 
+  // Extended axis inputs
+  axisId = input<string>('0');
+  domain = input<[number | string, number | string] | undefined>(undefined);
+  allowDecimals = input<boolean>(true);
+  allowDataOverflow = input<boolean>(false);
+  scale = input<string>('auto');
+  reversed = input<boolean>(false);
+  angle = input<number>(0);
+  dx = input<number>(0);
+  dy = input<number>(0);
+
   constructor() {
     // Update responsive service with axis dimensions
     effect(() => {
@@ -133,6 +148,25 @@ export class CartesianAxisComponent {
         this.updateAxisOffset();
       }
     });
+
+    // Register axis with AxisRegistryService
+    effect(() => {
+      this.axisRegistryService?.registerAxis({
+        axisId: this.axisId(),
+        type: this.orientation() === 'bottom' || this.orientation() === 'top' ? 'x' : 'y',
+        orientation: this.orientation(),
+        scale: null as any,
+        domain: this.computedDomain?.() ?? [],
+        range: [0, 0],
+        ticks: this.ticks?.() ?? [],
+        dataKey: this.dataKey(),
+      });
+    });
+  }
+
+  ngOnDestroy(): void {
+    const type = this.orientation() === 'bottom' || this.orientation() === 'top' ? 'x' : 'y';
+    this.axisRegistryService?.unregisterAxis(type, this.axisId());
   }
 
   resolvedData = computed(() => {
@@ -142,6 +176,24 @@ export class CartesianAxisComponent {
 
   resolvedChartType = computed(() => {
     return this.chartDataService?.chartType() ?? this.chartType();
+  });
+
+  // Computed domain: use explicit domain input if provided, otherwise auto-compute
+  computedDomain = computed(() => {
+    const domainInput = this.domain();
+    if (domainInput !== undefined) {
+      return domainInput;
+    }
+    // Auto-compute domain based on type
+    const data = this.resolvedData();
+    const dataKey = this.dataKey();
+    if (!data.length) return undefined;
+    if (this.type() === 'category') {
+      return this.scaleService.getCategoryDomain(data, dataKey) as any;
+    } else {
+      return this.chartDataService?.unifiedYDomain()
+        ?? (dataKey ? this.scaleService.getLinearDomain(data, dataKey) : undefined);
+    }
   });
 
   // Computed dimensions
@@ -185,6 +237,8 @@ export class CartesianAxisComponent {
     const chartType = this.resolvedChartType();
     const isHorizontal = orientation === 'top' || orientation === 'bottom';
     const size = isHorizontal ? this.actualWidth() : this.actualHeight();
+    const isReversed = this.reversed();
+    const domainOverride = this.domain();
 
     if (!data.length || size <= 0) return [];
 
@@ -199,13 +253,15 @@ export class CartesianAxisComponent {
       if (useBandScale) {
         // Band scale for discrete data
         const domain = this.scaleService.getCategoryDomain(data, dataKey);
-        const scale = this.scaleService.createBandScale(domain, [0, size]);
+        const range: [number, number] = isReversed ? [size, 0] : [0, size];
+        const scale = this.scaleService.createBandScale(domain, range);
         return this.scaleService.generateBandTicks(scale);
       } else {
         // Linear scale for continuous data
+        const range: [number, number] = isReversed ? [size, 0] : [0, size];
         const scale = this.scaleService.createLinearScale(
           [0, data.length - 1],
-          [0, size]
+          range
         );
         return data.map((item, index) => ({
           value: String(item[dataKey] || ''),
@@ -214,12 +270,18 @@ export class CartesianAxisComponent {
       }
     } else {
       // Linear scale for numerical data
-      const domain = this.chartDataService?.unifiedYDomain()
-        ?? (dataKey ? this.scaleService.getLinearDomain(data, dataKey) : null);
+      // Use domain override if provided, otherwise auto-compute
+      const domain = domainOverride !== undefined
+        ? domainOverride as [number, number]
+        : (this.chartDataService?.unifiedYDomain()
+          ?? (dataKey ? this.scaleService.getLinearDomain(data, dataKey) : null));
       if (!domain) return [];
       // Y-axis should be flipped (high values at top, low at bottom)
-      const range: [number, number] = isHorizontal ? [0, size] : [size, 0];
-      const scale = this.scaleService.createLinearScale(domain, range);
+      let range: [number, number] = isHorizontal ? [0, size] : [size, 0];
+      if (isReversed) {
+        range = [range[1], range[0]];
+      }
+      const scale = this.scaleService.createLinearScale(domain as [number, number], range);
       return this.scaleService.generateLinearTicks(scale, this.tickCount());
     }
   });

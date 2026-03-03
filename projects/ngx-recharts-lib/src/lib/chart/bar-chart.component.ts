@@ -4,10 +4,12 @@ import {
   computed,
   inject,
   ChangeDetectionStrategy,
-  effect
+  effect,
+  output,
 } from '@angular/core';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
+import { ChartMouseEvent } from '../core/event-types';
 import { ChartData, ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
@@ -15,9 +17,10 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
 import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
 import { TooltipService } from '../services/tooltip.service';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
-import { ChartDataService, YDomainMode } from '../services/chart-data.service';
+import { ChartDataService, YDomainMode, StackOffsetType } from '../services/chart-data.service';
 import { CartesianLabelContextService } from '../context/label-context.service';
 import { CartesianLabelListContextService } from '../context/label-list-context.service';
+import { AxisRegistryService } from '../services/axis-registry.service';
 
 @Component({
   selector: 'ngx-bar-chart',
@@ -34,6 +37,7 @@ import { CartesianLabelListContextService } from '../context/label-list-context.
     ChartDataService,
     CartesianLabelContextService,
     CartesianLabelListContextService,
+    AxisRegistryService,
     {
       provide: CHART_TOOLTIP_SERVICE,
       useExisting: TooltipService,
@@ -49,8 +53,12 @@ import { CartesianLabelListContextService } from '../context/label-list-context.
         [height]="actualHeight()"
         [margin]="margin()"
         [chartType]="'bar'"
-        [tooltip]="tooltip()">
-        
+        [tooltip]="tooltip()"
+        (containerClick)="chartClick.emit($event)"
+        (containerMouseMove)="chartMouseMove.emit($event)"
+        (containerMouseEnter)="chartMouseEnter.emit($event)"
+        (containerMouseLeave)="chartMouseLeave.emit($event)">
+
         <ng-content></ng-content>
       </ngx-chart-container>
     </ngx-recharts-wrapper>
@@ -59,6 +67,12 @@ import { CartesianLabelListContextService } from '../context/label-list-context.
 export class BarChartComponent {
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
   private chartDataService = inject(ChartDataService);
+
+  // Chart-level event outputs
+  chartClick = output<ChartMouseEvent>();
+  chartMouseMove = output<ChartMouseEvent>();
+  chartMouseEnter = output<ChartMouseEvent>();
+  chartMouseLeave = output<ChartMouseEvent>();
 
   constructor() {
     // Reset offsets when chart initializes
@@ -87,12 +101,23 @@ export class BarChartComponent {
       this.chartDataService.setMargin(this.margin());
       this.chartDataService.setYDomainMode(this.yDomainMode());
     });
+
+    effect(() => {
+      this.chartDataService.setBarSize(this.barSize());
+      this.chartDataService.setBarGap(this.barGap());
+      this.chartDataService.setBarCategoryGap(this.barCategoryGap());
+      this.chartDataService.setStackOffset(this.stackOffset());
+    });
   }
 
   // Inputs
   data = input.required<ChartData[]>();
   dataKey = input<string>('value');
   yDomainMode = input<YDomainMode>('unified');
+  barSize = input<number | undefined>(undefined);
+  barGap = input<number>(4);
+  barCategoryGap = input<string | number>('10%');
+  stackOffset = input<StackOffsetType>('none');
   width = input<number>(600);
   height = input<number>(400);
   margin = input<ChartMargin>({ top: 10, right: 5, bottom: 5, left: 5 });

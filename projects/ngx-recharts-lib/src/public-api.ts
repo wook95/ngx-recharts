@@ -4,6 +4,7 @@
 
 // Core types
 export * from './lib/core/types';
+export * from './lib/core/event-types';
 
 // Services
 export * from './lib/services/animation.service';

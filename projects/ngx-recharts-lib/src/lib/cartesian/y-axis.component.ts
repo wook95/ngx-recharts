@@ -36,6 +36,15 @@ import { CartesianAxisComponent } from './cartesian-axis.component';
       [mirror]="mirror()"
       [interval]="interval()"
       [minTickGap]="minTickGap()"
+      [axisId]="yAxisId()"
+      [domain]="domain()"
+      [allowDecimals]="allowDecimals()"
+      [allowDataOverflow]="allowDataOverflow()"
+      [scale]="scale()"
+      [reversed]="reversed()"
+      [angle]="angle()"
+      [dx]="dx()"
+      [dy]="dy()"
     ></svg:g>
   `,
 })
@@ -61,4 +70,17 @@ export class YAxisComponent {
   mirror = input<boolean>(false);
   interval = input<'preserveStart' | 'preserveEnd' | 'preserveStartEnd' | number>('preserveEnd');
   minTickGap = input<number>(5);
+
+  // Extended axis inputs
+  yAxisId = input<string>('0');
+  domain = input<[number | string, number | string] | undefined>(undefined);
+  allowDecimals = input<boolean>(true);
+  allowDataOverflow = input<boolean>(false);
+  scale = input<string>('auto');
+  padding = input<{ top: number; bottom: number }>({ top: 0, bottom: 0 });
+  reversed = input<boolean>(false);
+  angle = input<number>(0);
+  dx = input<number>(0);
+  dy = input<number>(0);
+  width = input<number>(60);
 }

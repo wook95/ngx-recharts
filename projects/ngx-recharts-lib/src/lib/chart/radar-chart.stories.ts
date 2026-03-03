@@ -102,3 +102,33 @@ export const CircleShape: Story = {
     height: 500,
   },
 };
+
+export const Interactive: Story = {
+  render: (args) => ({
+    props: {
+      ...args,
+      radarData,
+      onChartClick: (event: any) => console.log('Chart clicked:', event),
+      onChartMouseMove: (event: any) => console.log('Mouse move:', event),
+    },
+    template: `
+      <ngx-radar-chart
+        [data]="radarData"
+        [width]="width"
+        [height]="height"
+        cx="50%" cy="50%" [outerRadius]="'80%'"
+        (chartClick)="onChartClick($event)"
+        (chartMouseMove)="onChartMouseMove($event)"
+      >
+        <svg:g ngx-polar-grid></svg:g>
+        <svg:g ngx-polar-angle-axis dataKey="subject"></svg:g>
+        <svg:g ngx-polar-radius-axis></svg:g>
+        <svg:g ngx-radar dataKey="A" stroke="#8884d8" fill="#8884d8" [fillOpacity]="0.6"></svg:g>
+      </ngx-radar-chart>
+    `,
+  }),
+  args: {
+    width: 500,
+    height: 500,
+  },
+};

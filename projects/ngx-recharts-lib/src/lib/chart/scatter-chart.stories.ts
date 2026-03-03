@@ -94,3 +94,34 @@ export const TwoSeries: Story = {
     height: 400,
   },
 };
+
+export const Interactive: Story = {
+  render: (args) => ({
+    props: {
+      ...args,
+      scatterData01,
+      onChartClick: (event: any) => console.log('Chart clicked:', event),
+      onChartMouseMove: (event: any) => console.log('Mouse move:', event),
+    },
+    template: `
+      <ngx-scatter-chart
+        [data]="scatterData01"
+        [width]="width"
+        [height]="height"
+        [margin]="{ top: 20, right: 20, bottom: 20, left: 20 }"
+        (chartClick)="onChartClick($event)"
+        (chartMouseMove)="onChartMouseMove($event)"
+      >
+        <svg:g ngx-cartesian-grid strokeDasharray="3 3"></svg:g>
+        <svg:g ngx-x-axis [data]="scatterData01" dataKey="x" type="number" [chartType]="'bar'"></svg:g>
+        <svg:g ngx-y-axis [data]="scatterData01" dataKey="y" type="number"></svg:g>
+        <svg:g ngx-scatter [data]="scatterData01" [dataKey]="{ x: 'x', y: 'y' }"
+          fill="#8884d8" name="Series A"></svg:g>
+      </ngx-scatter-chart>
+    `,
+  }),
+  args: {
+    width: 600,
+    height: 400,
+  },
+};

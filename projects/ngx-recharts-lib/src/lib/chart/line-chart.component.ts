@@ -5,9 +5,11 @@ import {
   effect,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { ChartContainerComponent } from '../container/chart-container.component';
 import { RechartsWrapperComponent } from '../container/recharts-wrapper.component';
+import { ChartMouseEvent } from '../core/event-types';
 import { ChartData, ChartMargin } from '../core/types';
 import { TooltipConfig } from '../core/tooltip-types';
 import { ChartLayoutService } from '../services/chart-layout.service';
@@ -18,6 +20,7 @@ import { GraphicalItemRegistryService } from '../services/graphical-item-registr
 import { ChartDataService, YDomainMode } from '../services/chart-data.service';
 import { CartesianLabelContextService } from '../context/label-context.service';
 import { CartesianLabelListContextService } from '../context/label-list-context.service';
+import { AxisRegistryService } from '../services/axis-registry.service';
 
 
 @Component({
@@ -32,6 +35,7 @@ import { CartesianLabelListContextService } from '../context/label-list-context.
     ChartDataService,
     CartesianLabelContextService,
     CartesianLabelListContextService,
+    AxisRegistryService,
     {
       provide: CHART_TOOLTIP_SERVICE,
       useExisting: TooltipService,
@@ -47,6 +51,10 @@ import { CartesianLabelListContextService } from '../context/label-list-context.
         [margin]="margin()"
         [chartType]="'line'"
         [tooltip]="tooltip()"
+        (containerClick)="chartClick.emit($event)"
+        (containerMouseMove)="chartMouseMove.emit($event)"
+        (containerMouseEnter)="chartMouseEnter.emit($event)"
+        (containerMouseLeave)="chartMouseLeave.emit($event)"
       >
         <ng-content></ng-content>
       </ngx-chart-container>
@@ -58,6 +66,12 @@ export class LineChartComponent {
     optional: true,
   });
   private chartDataService = inject(ChartDataService);
+
+  // Chart-level event outputs
+  chartClick = output<ChartMouseEvent>();
+  chartMouseMove = output<ChartMouseEvent>();
+  chartMouseEnter = output<ChartMouseEvent>();
+  chartMouseLeave = output<ChartMouseEvent>();
 
   constructor() {
     // Reset offsets when chart initializes
