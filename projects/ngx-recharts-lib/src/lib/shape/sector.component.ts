@@ -68,6 +68,13 @@ export class SectorComponent {
     const endAngle = this.endAngle();
     const cornerRadius = this.cornerRadius();
 
+    if (![outerRadius, innerRadius, startAngle, endAngle, cornerRadius].every(Number.isFinite)
+      || outerRadius <= 0
+      || innerRadius < 0
+      || outerRadius < innerRadius) {
+      return '';
+    }
+
     const arcGenerator = arc()
       .innerRadius(innerRadius)
       .outerRadius(outerRadius)
