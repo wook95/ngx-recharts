@@ -16,7 +16,7 @@ export function polarToCartesian(
   radius: number,
   angle: number
 ): PolarPoint {
-  const radian = (Math.PI / 180) * angle;
+  const radian = ((angle - 90) * Math.PI) / 180;
   return {
     x: cx + radius * Math.cos(radian),
     y: cy + radius * Math.sin(radian)
