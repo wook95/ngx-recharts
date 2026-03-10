@@ -57,6 +57,11 @@ export interface BarRect {
           [attr.ry]="resolvedRadius()"
           [style.transition]="isAnimationActive() ? 'all ' + animationDuration() + 'ms ' + animationEasing() + ' ' + animationBegin() + 'ms' : null"
           (click)="handleBarClick($event, bar.payload, $index)"
+          (mousedown)="handleBarMouseDown($event, bar.payload, $index)"
+          (mouseup)="handleBarMouseUp($event, bar.payload, $index)"
+          (mousemove)="handleBarMouseMove($event, bar.payload, $index)"
+          (mouseover)="handleBarMouseOver($event, bar.payload, $index)"
+          (mouseout)="handleBarMouseOut($event, bar.payload, $index)"
           (mouseenter)="handleBarMouseEnter($event, bar.payload, $index)"
           (mouseleave)="handleBarMouseLeave($event, bar.payload, $index)" />
         @if (label()) {
@@ -131,6 +136,11 @@ export class BarComponent implements OnDestroy {
   activeIndex = input<number>(-1);
 
   barClick = output<ChartMouseEvent>();
+  barMouseDown = output<ChartMouseEvent>();
+  barMouseUp = output<ChartMouseEvent>();
+  barMouseMove = output<ChartMouseEvent>();
+  barMouseOver = output<ChartMouseEvent>();
+  barMouseOut = output<ChartMouseEvent>();
   barMouseEnter = output<ChartMouseEvent>();
   barMouseLeave = output<ChartMouseEvent>();
 
@@ -172,6 +182,56 @@ export class BarComponent implements OnDestroy {
 
   handleBarMouseEnter(event: MouseEvent, data: any, index: number) {
     this.barMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: data,
+      index,
+      value: data?.[this.dataKey() as string],
+    });
+  }
+
+  handleBarMouseDown(event: MouseEvent, data: any, index: number) {
+    this.barMouseDown.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: data,
+      index,
+      value: data?.[this.dataKey() as string],
+    });
+  }
+
+  handleBarMouseUp(event: MouseEvent, data: any, index: number) {
+    this.barMouseUp.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: data,
+      index,
+      value: data?.[this.dataKey() as string],
+    });
+  }
+
+  handleBarMouseMove(event: MouseEvent, data: any, index: number) {
+    this.barMouseMove.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: data,
+      index,
+      value: data?.[this.dataKey() as string],
+    });
+  }
+
+  handleBarMouseOver(event: MouseEvent, data: any, index: number) {
+    this.barMouseOver.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: data,
+      index,
+      value: data?.[this.dataKey() as string],
+    });
+  }
+
+  handleBarMouseOut(event: MouseEvent, data: any, index: number) {
+    this.barMouseOut.emit({
       nativeEvent: event,
       dataKey: this.dataKey() as string,
       payload: data,

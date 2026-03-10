@@ -48,6 +48,11 @@ export interface ScatterPoint {
           [animationDuration]="animationDuration()"
           [animationEasing]="animationEasing()"
           (symbolClick)="handleScatterClick($event, point, $index)"
+          (symbolMouseDown)="handleScatterMouseDown($event, point, $index)"
+          (symbolMouseUp)="handleScatterMouseUp($event, point, $index)"
+          (symbolMouseMove)="handleScatterMouseMove($event, point, $index)"
+          (symbolMouseOver)="handleScatterMouseOver($event, point, $index)"
+          (symbolMouseOut)="handleScatterMouseOut($event, point, $index)"
           (symbolMouseEnter)="handleScatterMouseEnter($event, point, $index)"
           (symbolMouseLeave)="handleScatterMouseLeave($event, point, $index)"
         />
@@ -89,6 +94,11 @@ export class ScatterComponent implements OnDestroy {
 
   // Event outputs
   scatterClick = output<ChartMouseEvent>();
+  scatterMouseDown = output<ChartMouseEvent>();
+  scatterMouseUp = output<ChartMouseEvent>();
+  scatterMouseMove = output<ChartMouseEvent>();
+  scatterMouseOver = output<ChartMouseEvent>();
+  scatterMouseOut = output<ChartMouseEvent>();
   scatterMouseEnter = output<ChartMouseEvent>();
   scatterMouseLeave = output<ChartMouseEvent>();
 
@@ -150,6 +160,56 @@ export class ScatterComponent implements OnDestroy {
 
   handleScatterMouseEnter(event: MouseEvent, point: ScatterPoint, index: number) {
     this.scatterMouseEnter.emit({
+      nativeEvent: event,
+      payload: point.payload,
+      index,
+      value: point.payload,
+      coordinate: { x: point.x, y: point.y },
+    });
+  }
+
+  handleScatterMouseDown(event: MouseEvent, point: ScatterPoint, index: number) {
+    this.scatterMouseDown.emit({
+      nativeEvent: event,
+      payload: point.payload,
+      index,
+      value: point.payload,
+      coordinate: { x: point.x, y: point.y },
+    });
+  }
+
+  handleScatterMouseUp(event: MouseEvent, point: ScatterPoint, index: number) {
+    this.scatterMouseUp.emit({
+      nativeEvent: event,
+      payload: point.payload,
+      index,
+      value: point.payload,
+      coordinate: { x: point.x, y: point.y },
+    });
+  }
+
+  handleScatterMouseMove(event: MouseEvent, point: ScatterPoint, index: number) {
+    this.scatterMouseMove.emit({
+      nativeEvent: event,
+      payload: point.payload,
+      index,
+      value: point.payload,
+      coordinate: { x: point.x, y: point.y },
+    });
+  }
+
+  handleScatterMouseOver(event: MouseEvent, point: ScatterPoint, index: number) {
+    this.scatterMouseOver.emit({
+      nativeEvent: event,
+      payload: point.payload,
+      index,
+      value: point.payload,
+      coordinate: { x: point.x, y: point.y },
+    });
+  }
+
+  handleScatterMouseOut(event: MouseEvent, point: ScatterPoint, index: number) {
+    this.scatterMouseOut.emit({
       nativeEvent: event,
       payload: point.payload,
       index,

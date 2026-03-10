@@ -22,6 +22,11 @@ import { arc } from 'd3-shape';
         [class]="className()"
         [style]="animationStyle()"
         (click)="sectorClick.emit($event)"
+        (mousedown)="sectorMouseDown.emit($event)"
+        (mouseup)="sectorMouseUp.emit($event)"
+        (mousemove)="sectorMouseMove.emit($event)"
+        (mouseover)="sectorMouseOver.emit($event)"
+        (mouseout)="sectorMouseOut.emit($event)"
         (mouseenter)="sectorMouseEnter.emit($event)"
         (mouseleave)="sectorMouseLeave.emit($event)" />
     }
@@ -42,6 +47,11 @@ export class SectorComponent {
   className = input<string>('');
 
   sectorClick = output<MouseEvent>();
+  sectorMouseDown = output<MouseEvent>();
+  sectorMouseUp = output<MouseEvent>();
+  sectorMouseMove = output<MouseEvent>();
+  sectorMouseOver = output<MouseEvent>();
+  sectorMouseOut = output<MouseEvent>();
   sectorMouseEnter = output<MouseEvent>();
   sectorMouseLeave = output<MouseEvent>();
 

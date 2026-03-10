@@ -22,6 +22,11 @@ import {
         [attr.stroke-width]="strokeWidth()"
         [style]="animationStyle()"
         (click)="dotClick.emit($event)"
+        (mousedown)="dotMouseDown.emit($event)"
+        (mouseup)="dotMouseUp.emit($event)"
+        (mousemove)="dotMouseMove.emit($event)"
+        (mouseover)="dotMouseOver.emit($event)"
+        (mouseout)="dotMouseOut.emit($event)"
         (mouseenter)="dotMouseEnter.emit($event)"
         (mouseleave)="dotMouseLeave.emit($event)" />
     }
@@ -52,6 +57,11 @@ export class DotComponent {
   });
 
   dotClick = output<MouseEvent>();
+  dotMouseDown = output<MouseEvent>();
+  dotMouseUp = output<MouseEvent>();
+  dotMouseMove = output<MouseEvent>();
+  dotMouseOver = output<MouseEvent>();
+  dotMouseOut = output<MouseEvent>();
   dotMouseEnter = output<MouseEvent>();
   dotMouseLeave = output<MouseEvent>();
 

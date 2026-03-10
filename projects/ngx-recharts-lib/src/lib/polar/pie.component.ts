@@ -52,6 +52,11 @@ export interface PieSectorData {
           [animationDuration]="animationDuration()"
           [animationEasing]="animationEasing()"
           (sectorClick)="handleSectorClick($event, sector, $index)"
+          (sectorMouseDown)="handleSectorMouseDown($event, sector, $index)"
+          (sectorMouseUp)="handleSectorMouseUp($event, sector, $index)"
+          (sectorMouseMove)="handleSectorMouseMove($event, sector, $index)"
+          (sectorMouseOver)="handleSectorMouseOver($event, sector, $index)"
+          (sectorMouseOut)="handleSectorMouseOut($event, sector, $index)"
           (sectorMouseEnter)="handleSectorMouseEnter($event, sector, $index)"
           (sectorMouseLeave)="handleSectorMouseLeave($event, sector, $index)"
         />
@@ -96,6 +101,11 @@ export class PieComponent implements OnDestroy {
   animationEasing = input<string>('ease');
 
   pieClick = output<ChartMouseEvent>();
+  pieMouseDown = output<ChartMouseEvent>();
+  pieMouseUp = output<ChartMouseEvent>();
+  pieMouseMove = output<ChartMouseEvent>();
+  pieMouseOver = output<ChartMouseEvent>();
+  pieMouseOut = output<ChartMouseEvent>();
   pieMouseEnter = output<ChartMouseEvent>();
   pieMouseLeave = output<ChartMouseEvent>();
 
@@ -200,6 +210,56 @@ export class PieComponent implements OnDestroy {
 
   handleSectorMouseEnter(event: MouseEvent, sectorData: any, index: number) {
     this.pieMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: sectorData,
+      index,
+      value: sectorData?.value,
+    });
+  }
+
+  handleSectorMouseDown(event: MouseEvent, sectorData: any, index: number) {
+    this.pieMouseDown.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: sectorData,
+      index,
+      value: sectorData?.value,
+    });
+  }
+
+  handleSectorMouseUp(event: MouseEvent, sectorData: any, index: number) {
+    this.pieMouseUp.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: sectorData,
+      index,
+      value: sectorData?.value,
+    });
+  }
+
+  handleSectorMouseMove(event: MouseEvent, sectorData: any, index: number) {
+    this.pieMouseMove.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: sectorData,
+      index,
+      value: sectorData?.value,
+    });
+  }
+
+  handleSectorMouseOver(event: MouseEvent, sectorData: any, index: number) {
+    this.pieMouseOver.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: sectorData,
+      index,
+      value: sectorData?.value,
+    });
+  }
+
+  handleSectorMouseOut(event: MouseEvent, sectorData: any, index: number) {
+    this.pieMouseOut.emit({
       nativeEvent: event,
       dataKey: this.dataKey() as string,
       payload: sectorData,

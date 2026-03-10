@@ -63,6 +63,11 @@ export interface RadialBarEntry {
           [animationDuration]="animationDuration()"
           [animationEasing]="animationEasing()"
           (sectorClick)="handleRadialBarClick($event, bar, $index)"
+          (sectorMouseDown)="handleRadialBarMouseDown($event, bar, $index)"
+          (sectorMouseUp)="handleRadialBarMouseUp($event, bar, $index)"
+          (sectorMouseMove)="handleRadialBarMouseMove($event, bar, $index)"
+          (sectorMouseOver)="handleRadialBarMouseOver($event, bar, $index)"
+          (sectorMouseOut)="handleRadialBarMouseOut($event, bar, $index)"
           (sectorMouseEnter)="handleRadialBarMouseEnter($event, bar, $index)"
           (sectorMouseLeave)="handleRadialBarMouseLeave($event, bar, $index)"
         />
@@ -119,6 +124,11 @@ export class RadialBarComponent implements OnDestroy {
 
   // Event outputs
   radialBarClick = output<ChartMouseEvent>();
+  radialBarMouseDown = output<ChartMouseEvent>();
+  radialBarMouseUp = output<ChartMouseEvent>();
+  radialBarMouseMove = output<ChartMouseEvent>();
+  radialBarMouseOver = output<ChartMouseEvent>();
+  radialBarMouseOut = output<ChartMouseEvent>();
   radialBarMouseEnter = output<ChartMouseEvent>();
   radialBarMouseLeave = output<ChartMouseEvent>();
 
@@ -134,6 +144,56 @@ export class RadialBarComponent implements OnDestroy {
 
   handleRadialBarMouseEnter(event: MouseEvent, barData: RadialBarEntry, index: number) {
     this.radialBarMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: barData,
+      index,
+      value: barData.value,
+    });
+  }
+
+  handleRadialBarMouseDown(event: MouseEvent, barData: RadialBarEntry, index: number) {
+    this.radialBarMouseDown.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: barData,
+      index,
+      value: barData.value,
+    });
+  }
+
+  handleRadialBarMouseUp(event: MouseEvent, barData: RadialBarEntry, index: number) {
+    this.radialBarMouseUp.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: barData,
+      index,
+      value: barData.value,
+    });
+  }
+
+  handleRadialBarMouseMove(event: MouseEvent, barData: RadialBarEntry, index: number) {
+    this.radialBarMouseMove.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: barData,
+      index,
+      value: barData.value,
+    });
+  }
+
+  handleRadialBarMouseOver(event: MouseEvent, barData: RadialBarEntry, index: number) {
+    this.radialBarMouseOver.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: barData,
+      index,
+      value: barData.value,
+    });
+  }
+
+  handleRadialBarMouseOut(event: MouseEvent, barData: RadialBarEntry, index: number) {
+    this.radialBarMouseOut.emit({
       nativeEvent: event,
       dataKey: this.dataKey(),
       payload: barData,

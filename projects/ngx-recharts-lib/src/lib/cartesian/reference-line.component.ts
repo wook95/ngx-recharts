@@ -4,7 +4,9 @@ import {
   computed,
   inject,
   input,
+  output,
 } from '@angular/core';
+import { ChartMouseEvent } from '../core/event-types';
 import { AxisRegistryService } from '../services/axis-registry.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 
@@ -30,6 +32,14 @@ export interface ReferenceLineSegmentPoint {
         [attr.stroke-dasharray]="strokeDasharray() || null"
         [attr.fill]="fill()"
         [attr.fill-opacity]="fillOpacity()"
+        (click)="handleClick($event)"
+        (mousedown)="handleMouseDown($event)"
+        (mouseup)="handleMouseUp($event)"
+        (mousemove)="handleMouseMove($event)"
+        (mouseover)="handleMouseOver($event)"
+        (mouseout)="handleMouseOut($event)"
+        (mouseenter)="handleMouseEnter($event)"
+        (mouseleave)="handleMouseLeave($event)"
       />
       @if (label()) {
         <svg:text
@@ -59,6 +69,33 @@ export class ReferenceLineComponent {
   label = input<string | undefined>(undefined);
   ifOverflow = input<'discard' | 'hidden' | 'visible' | 'extendDomain'>('discard');
   segment = input<[ReferenceLineSegmentPoint, ReferenceLineSegmentPoint] | undefined>(undefined);
+
+  // Event outputs
+  refLineClick = output<ChartMouseEvent>();
+  refLineMouseDown = output<ChartMouseEvent>();
+  refLineMouseUp = output<ChartMouseEvent>();
+  refLineMouseMove = output<ChartMouseEvent>();
+  refLineMouseOver = output<ChartMouseEvent>();
+  refLineMouseOut = output<ChartMouseEvent>();
+  refLineMouseEnter = output<ChartMouseEvent>();
+  refLineMouseLeave = output<ChartMouseEvent>();
+
+  private emitEvent(event: MouseEvent): ChartMouseEvent {
+    return {
+      nativeEvent: event,
+      payload: { x: this.x(), y: this.y() },
+      index: 0,
+    };
+  }
+
+  handleClick(event: MouseEvent) { this.refLineClick.emit(this.emitEvent(event)); }
+  handleMouseDown(event: MouseEvent) { this.refLineMouseDown.emit(this.emitEvent(event)); }
+  handleMouseUp(event: MouseEvent) { this.refLineMouseUp.emit(this.emitEvent(event)); }
+  handleMouseMove(event: MouseEvent) { this.refLineMouseMove.emit(this.emitEvent(event)); }
+  handleMouseOver(event: MouseEvent) { this.refLineMouseOver.emit(this.emitEvent(event)); }
+  handleMouseOut(event: MouseEvent) { this.refLineMouseOut.emit(this.emitEvent(event)); }
+  handleMouseEnter(event: MouseEvent) { this.refLineMouseEnter.emit(this.emitEvent(event)); }
+  handleMouseLeave(event: MouseEvent) { this.refLineMouseLeave.emit(this.emitEvent(event)); }
 
   private plotWidth = computed(() => this.responsiveService?.plotWidth() ?? 400);
   private plotHeight = computed(() => this.responsiveService?.plotHeight() ?? 300);

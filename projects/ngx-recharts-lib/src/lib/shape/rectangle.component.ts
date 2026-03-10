@@ -20,6 +20,11 @@ import {
         [class]="className()"
         [style]="animationStyle()"
         (click)="rectClick.emit($event)"
+        (mousedown)="rectMouseDown.emit($event)"
+        (mouseup)="rectMouseUp.emit($event)"
+        (mousemove)="rectMouseMove.emit($event)"
+        (mouseover)="rectMouseOver.emit($event)"
+        (mouseout)="rectMouseOut.emit($event)"
         (mouseenter)="rectMouseEnter.emit($event)"
         (mouseleave)="rectMouseLeave.emit($event)" />
     } @else if (isRenderable()) {
@@ -34,6 +39,11 @@ import {
         [class]="className()"
         [style]="animationStyle()"
         (click)="rectClick.emit($event)"
+        (mousedown)="rectMouseDown.emit($event)"
+        (mouseup)="rectMouseUp.emit($event)"
+        (mousemove)="rectMouseMove.emit($event)"
+        (mouseover)="rectMouseOver.emit($event)"
+        (mouseout)="rectMouseOut.emit($event)"
         (mouseenter)="rectMouseEnter.emit($event)"
         (mouseleave)="rectMouseLeave.emit($event)" />
     }
@@ -65,6 +75,11 @@ export class RectangleComponent {
   });
 
   rectClick = output<MouseEvent>();
+  rectMouseDown = output<MouseEvent>();
+  rectMouseUp = output<MouseEvent>();
+  rectMouseMove = output<MouseEvent>();
+  rectMouseOver = output<MouseEvent>();
+  rectMouseOut = output<MouseEvent>();
   rectMouseEnter = output<MouseEvent>();
   rectMouseLeave = output<MouseEvent>();
 

@@ -40,6 +40,11 @@ export interface FunnelSegment {
         @if ($last && lastShapeType() === 'rectangle') {
           <svg:g
             (click)="handleFunnelClick($event, segment, $index)"
+            (mousedown)="handleFunnelMouseDown($event, segment, $index)"
+            (mouseup)="handleFunnelMouseUp($event, segment, $index)"
+            (mousemove)="handleFunnelMouseMove($event, segment, $index)"
+            (mouseover)="handleFunnelMouseOver($event, segment, $index)"
+            (mouseout)="handleFunnelMouseOut($event, segment, $index)"
             (mouseenter)="handleFunnelMouseEnter($event, segment, $index)"
             (mouseleave)="handleFunnelMouseLeave($event, segment, $index)"
           >
@@ -48,6 +53,11 @@ export interface FunnelSegment {
         } @else {
           <svg:g
             (click)="handleFunnelClick($event, segment, $index)"
+            (mousedown)="handleFunnelMouseDown($event, segment, $index)"
+            (mouseup)="handleFunnelMouseUp($event, segment, $index)"
+            (mousemove)="handleFunnelMouseMove($event, segment, $index)"
+            (mouseover)="handleFunnelMouseOver($event, segment, $index)"
+            (mouseout)="handleFunnelMouseOut($event, segment, $index)"
             (mouseenter)="handleFunnelMouseEnter($event, segment, $index)"
             (mouseleave)="handleFunnelMouseLeave($event, segment, $index)"
           >
@@ -86,6 +96,11 @@ export class FunnelComponent implements OnDestroy {
 
   // Event outputs
   funnelClick = output<ChartMouseEvent>();
+  funnelMouseDown = output<ChartMouseEvent>();
+  funnelMouseUp = output<ChartMouseEvent>();
+  funnelMouseMove = output<ChartMouseEvent>();
+  funnelMouseOver = output<ChartMouseEvent>();
+  funnelMouseOut = output<ChartMouseEvent>();
   funnelMouseEnter = output<ChartMouseEvent>();
   funnelMouseLeave = output<ChartMouseEvent>();
 
@@ -101,6 +116,56 @@ export class FunnelComponent implements OnDestroy {
 
   handleFunnelMouseEnter(event: MouseEvent, segment: FunnelSegment, index: number) {
     this.funnelMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: segment,
+      index,
+      value: segment.value,
+    });
+  }
+
+  handleFunnelMouseDown(event: MouseEvent, segment: FunnelSegment, index: number) {
+    this.funnelMouseDown.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: segment,
+      index,
+      value: segment.value,
+    });
+  }
+
+  handleFunnelMouseUp(event: MouseEvent, segment: FunnelSegment, index: number) {
+    this.funnelMouseUp.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: segment,
+      index,
+      value: segment.value,
+    });
+  }
+
+  handleFunnelMouseMove(event: MouseEvent, segment: FunnelSegment, index: number) {
+    this.funnelMouseMove.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: segment,
+      index,
+      value: segment.value,
+    });
+  }
+
+  handleFunnelMouseOver(event: MouseEvent, segment: FunnelSegment, index: number) {
+    this.funnelMouseOver.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: segment,
+      index,
+      value: segment.value,
+    });
+  }
+
+  handleFunnelMouseOut(event: MouseEvent, segment: FunnelSegment, index: number) {
+    this.funnelMouseOut.emit({
       nativeEvent: event,
       dataKey: this.dataKey(),
       payload: segment,

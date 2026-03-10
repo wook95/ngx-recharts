@@ -33,6 +33,11 @@ export type SymbolType = 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 't
       [attr.transform]="transform()"
       [style]="animationStyle()"
       (click)="symbolClick.emit($event)"
+      (mousedown)="symbolMouseDown.emit($event)"
+      (mouseup)="symbolMouseUp.emit($event)"
+      (mousemove)="symbolMouseMove.emit($event)"
+      (mouseover)="symbolMouseOver.emit($event)"
+      (mouseout)="symbolMouseOut.emit($event)"
       (mouseenter)="symbolMouseEnter.emit($event)"
       (mouseleave)="symbolMouseLeave.emit($event)" />
     }
@@ -63,6 +68,11 @@ export class SymbolsComponent {
   });
 
   symbolClick = output<MouseEvent>();
+  symbolMouseDown = output<MouseEvent>();
+  symbolMouseUp = output<MouseEvent>();
+  symbolMouseMove = output<MouseEvent>();
+  symbolMouseOver = output<MouseEvent>();
+  symbolMouseOut = output<MouseEvent>();
   symbolMouseEnter = output<MouseEvent>();
   symbolMouseLeave = output<MouseEvent>();
 

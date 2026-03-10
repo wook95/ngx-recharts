@@ -29,6 +29,11 @@ interface RadarPoint {
     @if (!hide()) {
       <svg:g
         (click)="handleRadarClick($event)"
+        (mousedown)="handleRadarMouseDown($event)"
+        (mouseup)="handleRadarMouseUp($event)"
+        (mousemove)="handleRadarMouseMove($event)"
+        (mouseover)="handleRadarMouseOver($event)"
+        (mouseout)="handleRadarMouseOut($event)"
         (mouseenter)="handleRadarMouseEnter($event)"
         (mouseleave)="handleRadarMouseLeave($event)"
       >
@@ -111,6 +116,11 @@ export class RadarComponent implements OnDestroy {
 
   // Event outputs
   radarClick = output<ChartMouseEvent>();
+  radarMouseDown = output<ChartMouseEvent>();
+  radarMouseUp = output<ChartMouseEvent>();
+  radarMouseMove = output<ChartMouseEvent>();
+  radarMouseOver = output<ChartMouseEvent>();
+  radarMouseOut = output<ChartMouseEvent>();
   radarMouseEnter = output<ChartMouseEvent>();
   radarMouseLeave = output<ChartMouseEvent>();
 
@@ -125,6 +135,51 @@ export class RadarComponent implements OnDestroy {
 
   handleRadarMouseEnter(event: MouseEvent) {
     this.radarMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleRadarMouseDown(event: MouseEvent) {
+    this.radarMouseDown.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleRadarMouseUp(event: MouseEvent) {
+    this.radarMouseUp.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleRadarMouseMove(event: MouseEvent) {
+    this.radarMouseMove.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleRadarMouseOver(event: MouseEvent) {
+    this.radarMouseOver.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey(),
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleRadarMouseOut(event: MouseEvent) {
+    this.radarMouseOut.emit({
       nativeEvent: event,
       dataKey: this.dataKey(),
       payload: this.resolvedData(),
