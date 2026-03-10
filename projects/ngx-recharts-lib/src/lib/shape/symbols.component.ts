@@ -23,6 +23,7 @@ export type SymbolType = 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 't
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (isRenderable()) {
     <svg:path
       [class]="className()"
       [attr.d]="symbolPath()"
@@ -34,6 +35,7 @@ export type SymbolType = 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 't
       (click)="symbolClick.emit($event)"
       (mouseenter)="symbolMouseEnter.emit($event)"
       (mouseleave)="symbolMouseLeave.emit($event)" />
+    }
   `,
 })
 export class SymbolsComponent {
@@ -63,6 +65,11 @@ export class SymbolsComponent {
   symbolClick = output<MouseEvent>();
   symbolMouseEnter = output<MouseEvent>();
   symbolMouseLeave = output<MouseEvent>();
+
+  isRenderable = computed(() => {
+    return Number.isFinite(this.cx()) && Number.isFinite(this.cy())
+      && Number.isFinite(this.size());
+  });
 
   private d3SymbolType = computed(() => {
     switch (this.type()) {

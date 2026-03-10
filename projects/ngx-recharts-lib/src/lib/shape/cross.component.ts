@@ -10,9 +10,9 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (pathData(); as path) {
+    @if (isRenderable()) {
       <svg:path
-        [attr.d]="path"
+        [attr.d]="pathData()"
         [attr.fill]="fill()"
         [attr.stroke]="stroke()"
         [attr.stroke-width]="strokeWidth()"
@@ -45,6 +45,11 @@ export class CrossComponent {
     const duration = `${this.animationDuration()}ms`;
     const easing = this.animationEasing();
     return { transition: `all ${duration} ${easing} ${delay}` };
+  });
+
+  isRenderable = computed(() => {
+    return Number.isFinite(this.x()) && Number.isFinite(this.y())
+      && Number.isFinite(this.width()) && Number.isFinite(this.height());
   });
 
   pathData = computed(() => {

@@ -55,6 +55,9 @@ export class DotComponent {
   dotMouseEnter = output<MouseEvent>();
   dotMouseLeave = output<MouseEvent>();
 
-  isRenderable = computed(() => [this.cx(), this.cy(), this.r()].every(Number.isFinite) && this.r() > 0);
+  isRenderable = computed(() => {
+    return Number.isFinite(this.cx()) && Number.isFinite(this.cy())
+      && Number.isFinite(this.r());
+  });
 }
 

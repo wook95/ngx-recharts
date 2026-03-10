@@ -12,7 +12,7 @@ import { arc } from 'd3-shape';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (pathData()) {
+    @if (isRenderable()) {
       <svg:path
         [attr.d]="pathData()"
         [attr.transform]="transform()"
@@ -57,6 +57,11 @@ export class SectorComponent {
     const duration = `${this.animationDuration()}ms`;
     const easing = this.animationEasing();
     return { transition: `all ${duration} ${easing} ${delay}` };
+  });
+
+  isRenderable = computed(() => {
+    return this.outerRadius() >= this.innerRadius()
+      && this.startAngle() !== this.endAngle();
   });
 
   transform = computed(() => `translate(${this.cx()}, ${this.cy()})`);

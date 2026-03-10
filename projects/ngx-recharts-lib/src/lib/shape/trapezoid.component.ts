@@ -10,9 +10,9 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (pathData(); as path) {
+    @if (isRenderable()) {
       <svg:path
-        [attr.d]="path"
+        [attr.d]="pathData()"
         [attr.fill]="fill()"
         [attr.stroke]="stroke()"
         [attr.stroke-width]="strokeWidth()"
@@ -44,6 +44,14 @@ export class TrapezoidComponent {
     const duration = `${this.animationDuration()}ms`;
     const easing = this.animationEasing();
     return { transition: `all ${duration} ${easing} ${delay}` };
+  });
+
+  isRenderable = computed(() => {
+    const x = this.x(), y = this.y();
+    const uw = this.upperWidth(), lw = this.lowerWidth(), h = this.height();
+    return Number.isFinite(x) && Number.isFinite(y)
+      && Number.isFinite(uw) && Number.isFinite(lw) && Number.isFinite(h)
+      && !(uw === 0 && lw === 0) && h !== 0;
   });
 
   pathData = computed(() => {

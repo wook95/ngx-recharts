@@ -69,9 +69,10 @@ export class RectangleComponent {
   rectMouseLeave = output<MouseEvent>();
 
   isRenderable = computed(() => {
-    const width = this.width();
-    const height = this.height();
-    return [this.x(), this.y(), width, height].every(Number.isFinite) && width > 0 && height > 0;
+    const x = this.x(), y = this.y(), w = this.width(), h = this.height();
+    return Number.isFinite(x) && Number.isFinite(y)
+      && Number.isFinite(w) && Number.isFinite(h)
+      && w !== 0 && h !== 0;
   });
 
   hasRadius = computed(() => {
