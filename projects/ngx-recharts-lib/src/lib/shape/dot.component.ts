@@ -11,18 +11,20 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:circle
-      [class]="className()"
-      [attr.cx]="cx()"
-      [attr.cy]="cy()"
-      [attr.r]="r()"
-      [attr.fill]="fill()"
-      [attr.stroke]="stroke()"
-      [attr.stroke-width]="strokeWidth()"
-      [style]="animationStyle()"
-      (click)="dotClick.emit($event)"
-      (mouseenter)="dotMouseEnter.emit($event)"
-      (mouseleave)="dotMouseLeave.emit($event)" />
+    @if (isRenderable()) {
+      <svg:circle
+        [class]="className()"
+        [attr.cx]="cx()"
+        [attr.cy]="cy()"
+        [attr.r]="r()"
+        [attr.fill]="fill()"
+        [attr.stroke]="stroke()"
+        [attr.stroke-width]="strokeWidth()"
+        [style]="animationStyle()"
+        (click)="dotClick.emit($event)"
+        (mouseenter)="dotMouseEnter.emit($event)"
+        (mouseleave)="dotMouseLeave.emit($event)" />
+    }
   `,
 })
 export class DotComponent {
@@ -52,4 +54,7 @@ export class DotComponent {
   dotClick = output<MouseEvent>();
   dotMouseEnter = output<MouseEvent>();
   dotMouseLeave = output<MouseEvent>();
+
+  isRenderable = computed(() => [this.cx(), this.cy(), this.r()].every(Number.isFinite) && this.r() > 0);
 }
+

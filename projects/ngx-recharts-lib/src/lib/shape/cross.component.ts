@@ -10,13 +10,15 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:path
-      [attr.d]="pathData()"
-      [attr.fill]="fill()"
-      [attr.stroke]="stroke()"
-      [attr.stroke-width]="strokeWidth()"
-      [class]="className()"
-      [style]="animationStyle()" />
+    @if (pathData(); as path) {
+      <svg:path
+        [attr.d]="path"
+        [attr.fill]="fill()"
+        [attr.stroke]="stroke()"
+        [attr.stroke-width]="strokeWidth()"
+        [class]="className()"
+        [style]="animationStyle()" />
+    }
   `,
 })
 export class CrossComponent {
@@ -46,30 +48,22 @@ export class CrossComponent {
   });
 
   pathData = computed(() => {
-    const cx = this.x();
-    const cy = this.y();
-    const w = this.width();
-    const h = this.height();
+    const x = this.x();
+    const y = this.y();
+    const width = this.width();
+    const height = this.height();
+    const top = this.top() ?? (y - height / 2);
+    const left = this.left() ?? (x - width / 2);
 
-    const halfW = w / 2;
-    const halfH = h / 2;
-    const armW = w / 6;
-    const armH = h / 6;
+    if (![x, y, width, height, top, left].every(Number.isFinite) || width <= 0 || height <= 0) {
+      return null;
+    }
 
     return [
-      `M ${cx - armW} ${cy - halfH}`,
-      `L ${cx + armW} ${cy - halfH}`,
-      `L ${cx + armW} ${cy - armH}`,
-      `L ${cx + halfW} ${cy - armH}`,
-      `L ${cx + halfW} ${cy + armH}`,
-      `L ${cx + armW} ${cy + armH}`,
-      `L ${cx + armW} ${cy + halfH}`,
-      `L ${cx - armW} ${cy + halfH}`,
-      `L ${cx - armW} ${cy + armH}`,
-      `L ${cx - halfW} ${cy + armH}`,
-      `L ${cx - halfW} ${cy - armH}`,
-      `L ${cx - armW} ${cy - armH}`,
-      'Z',
+      `M ${x} ${top}`,
+      `V ${top + height}`,
+      `M ${left} ${y}`,
+      `H ${left + width}`,
     ].join(' ');
   });
 }

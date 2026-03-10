@@ -10,13 +10,15 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:path
-      [attr.d]="pathData()"
-      [attr.fill]="fill()"
-      [attr.stroke]="stroke()"
-      [attr.stroke-width]="strokeWidth()"
-      [class]="className()"
-      [style]="animationStyle()" />
+    @if (pathData(); as path) {
+      <svg:path
+        [attr.d]="path"
+        [attr.fill]="fill()"
+        [attr.stroke]="stroke()"
+        [attr.stroke-width]="strokeWidth()"
+        [class]="className()"
+        [style]="animationStyle()" />
+    }
   `,
 })
 export class TrapezoidComponent {
@@ -51,27 +53,20 @@ export class TrapezoidComponent {
     const lowerWidth = this.lowerWidth();
     const height = this.height();
 
-    // Calculate vertices for a center-aligned trapezoid
-    // Top edge at y, bottom edge at y + height
-    // Trapezoid is centered horizontally based on lowerWidth
-    const topLeftX = x + (lowerWidth - upperWidth) / 2;
-    const topLeftY = y;
+    if (![x, y, upperWidth, lowerWidth, height].every(Number.isFinite)
+      || upperWidth < 0
+      || lowerWidth < 0
+      || height <= 0) {
+      return null;
+    }
 
-    const topRightX = x + (lowerWidth + upperWidth) / 2;
-    const topRightY = y;
+    const offset = (lowerWidth - upperWidth) / 2;
 
-    const bottomRightX = x + lowerWidth;
-    const bottomRightY = y + height;
-
-    const bottomLeftX = x;
-    const bottomLeftY = y + height;
-
-    // Path: M topLeft L topRight L bottomRight L bottomLeft Z
     return [
-      `M ${topLeftX} ${topLeftY}`,
-      `L ${topRightX} ${topRightY}`,
-      `L ${bottomRightX} ${bottomRightY}`,
-      `L ${bottomLeftX} ${bottomLeftY}`,
+      `M ${x} ${y}`,
+      `L ${x + upperWidth} ${y}`,
+      `L ${x + lowerWidth - offset} ${y + height}`,
+      `L ${x - offset} ${y + height}`,
       'Z',
     ].join(' ');
   });

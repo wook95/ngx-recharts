@@ -11,7 +11,7 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (hasRadius()) {
+    @if (isRenderable() && hasRadius()) {
       <svg:path
         [attr.d]="pathData()"
         [attr.fill]="fill()"
@@ -22,7 +22,7 @@ import {
         (click)="rectClick.emit($event)"
         (mouseenter)="rectMouseEnter.emit($event)"
         (mouseleave)="rectMouseLeave.emit($event)" />
-    } @else {
+    } @else if (isRenderable()) {
       <svg:rect
         [attr.x]="x()"
         [attr.y]="y()"
@@ -68,6 +68,12 @@ export class RectangleComponent {
   rectMouseEnter = output<MouseEvent>();
   rectMouseLeave = output<MouseEvent>();
 
+  isRenderable = computed(() => {
+    const width = this.width();
+    const height = this.height();
+    return [this.x(), this.y(), width, height].every(Number.isFinite) && width > 0 && height > 0;
+  });
+
   hasRadius = computed(() => {
     const r = this.radius();
     if (typeof r === 'number') return r > 0;
@@ -80,6 +86,10 @@ export class RectangleComponent {
     const w = this.width();
     const h = this.height();
     const r = this.radius();
+
+    if (![x, y, w, h].every(Number.isFinite) || w <= 0 || h <= 0) {
+      return '';
+    }
 
     const maxR = Math.min(w / 2, h / 2);
 
