@@ -10,13 +10,15 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:path
-      [attr.d]="pathData()"
-      [attr.fill]="fill()"
-      [attr.stroke]="stroke()"
-      [attr.stroke-width]="strokeWidth()"
-      [class]="className()"
-      [style]="animationStyle()" />
+    @if (shouldRender()) {
+      <svg:path
+        [attr.d]="pathData()"
+        [attr.fill]="fill()"
+        [attr.stroke]="stroke()"
+        [attr.stroke-width]="strokeWidth()"
+        [class]="className()"
+        [style]="animationStyle()" />
+    }
   `,
 })
 export class CrossComponent {
@@ -45,31 +47,33 @@ export class CrossComponent {
     return { transition: `all ${duration} ${easing} ${delay}` };
   });
 
+  /**
+   * Whether the component should render. Returns false for invalid inputs.
+   */
+  shouldRender = computed(() => {
+    const w = this.width();
+    const h = this.height();
+    return Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0;
+  });
+
+  /**
+   * Recharts Cross is a thin crosshair: two perpendicular lines
+   * centered at (x, y). The vertical line spans from top to top+height,
+   * the horizontal line spans from left to left+width.
+   *
+   * Path: M{x},{top}v{height}M{left},{y}h{width}
+   */
   pathData = computed(() => {
+    if (!this.shouldRender()) return '';
+
     const cx = this.x();
     const cy = this.y();
     const w = this.width();
     const h = this.height();
 
-    const halfW = w / 2;
-    const halfH = h / 2;
-    const armW = w / 6;
-    const armH = h / 6;
+    const topVal = this.top() ?? (cy - h / 2);
+    const leftVal = this.left() ?? (cx - w / 2);
 
-    return [
-      `M ${cx - armW} ${cy - halfH}`,
-      `L ${cx + armW} ${cy - halfH}`,
-      `L ${cx + armW} ${cy - armH}`,
-      `L ${cx + halfW} ${cy - armH}`,
-      `L ${cx + halfW} ${cy + armH}`,
-      `L ${cx + armW} ${cy + armH}`,
-      `L ${cx + armW} ${cy + halfH}`,
-      `L ${cx - armW} ${cy + halfH}`,
-      `L ${cx - armW} ${cy + armH}`,
-      `L ${cx - halfW} ${cy + armH}`,
-      `L ${cx - halfW} ${cy - armH}`,
-      `L ${cx - armW} ${cy - armH}`,
-      'Z',
-    ].join(' ');
+    return `M${cx},${topVal}v${h}M${leftVal},${cy}h${w}`;
   });
 }

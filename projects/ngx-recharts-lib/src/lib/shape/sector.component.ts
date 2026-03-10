@@ -12,7 +12,7 @@ import { arc } from 'd3-shape';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (pathData()) {
+    @if (shouldRender() && pathData()) {
       <svg:path
         [attr.d]="pathData()"
         [attr.transform]="transform()"
@@ -59,9 +59,21 @@ export class SectorComponent {
     return { transition: `all ${duration} ${easing} ${delay}` };
   });
 
+  /**
+   * Null guard: skip rendering when outerRadius < innerRadius.
+   * Matches recharts Sector behaviour.
+   */
+  shouldRender = computed(() => {
+    const outer = this.outerRadius();
+    const inner = this.innerRadius();
+    return Number.isFinite(outer) && Number.isFinite(inner) && outer >= inner;
+  });
+
   transform = computed(() => `translate(${this.cx()}, ${this.cy()})`);
 
   pathData = computed(() => {
+    if (!this.shouldRender()) return '';
+
     const outerRadius = this.outerRadius();
     const innerRadius = this.innerRadius();
     const startAngle = this.startAngle();

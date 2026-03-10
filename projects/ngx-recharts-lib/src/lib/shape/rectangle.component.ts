@@ -11,31 +11,33 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (hasRadius()) {
-      <svg:path
-        [attr.d]="pathData()"
-        [attr.fill]="fill()"
-        [attr.stroke]="stroke()"
-        [attr.stroke-width]="strokeWidth()"
-        [class]="className()"
-        [style]="animationStyle()"
-        (click)="rectClick.emit($event)"
-        (mouseenter)="rectMouseEnter.emit($event)"
-        (mouseleave)="rectMouseLeave.emit($event)" />
-    } @else {
-      <svg:rect
-        [attr.x]="x()"
-        [attr.y]="y()"
-        [attr.width]="width()"
-        [attr.height]="height()"
-        [attr.fill]="fill()"
-        [attr.stroke]="stroke()"
-        [attr.stroke-width]="strokeWidth()"
-        [class]="className()"
-        [style]="animationStyle()"
-        (click)="rectClick.emit($event)"
-        (mouseenter)="rectMouseEnter.emit($event)"
-        (mouseleave)="rectMouseLeave.emit($event)" />
+    @if (shouldRender()) {
+      @if (hasRadius()) {
+        <svg:path
+          [attr.d]="pathData()"
+          [attr.fill]="fill()"
+          [attr.stroke]="stroke()"
+          [attr.stroke-width]="strokeWidth()"
+          [class]="className()"
+          [style]="animationStyle()"
+          (click)="rectClick.emit($event)"
+          (mouseenter)="rectMouseEnter.emit($event)"
+          (mouseleave)="rectMouseLeave.emit($event)" />
+      } @else {
+        <svg:rect
+          [attr.x]="x()"
+          [attr.y]="y()"
+          [attr.width]="width()"
+          [attr.height]="height()"
+          [attr.fill]="fill()"
+          [attr.stroke]="stroke()"
+          [attr.stroke-width]="strokeWidth()"
+          [class]="className()"
+          [style]="animationStyle()"
+          (click)="rectClick.emit($event)"
+          (mouseenter)="rectMouseEnter.emit($event)"
+          (mouseleave)="rectMouseLeave.emit($event)" />
+      }
     }
   `,
 })
@@ -68,6 +70,16 @@ export class RectangleComponent {
   rectMouseEnter = output<MouseEvent>();
   rectMouseLeave = output<MouseEvent>();
 
+  /**
+   * Null guard: skip rendering when width or height is zero or NaN.
+   * Matches recharts Rectangle behaviour.
+   */
+  shouldRender = computed(() => {
+    const w = this.width();
+    const h = this.height();
+    return Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0;
+  });
+
   hasRadius = computed(() => {
     const r = this.radius();
     if (typeof r === 'number') return r > 0;
@@ -94,7 +106,7 @@ export class RectangleComponent {
     }
 
     // Build path: start at top-left after top-left corner arc
-    // Move clockwise: top edge → top-right → right edge → bottom-right → bottom edge → bottom-left → left edge → top-left
+    // Move clockwise: top edge -> top-right -> right edge -> bottom-right -> bottom edge -> bottom-left -> left edge -> top-left
     return [
       `M ${x + tl} ${y}`,
       `L ${x + w - tr} ${y}`,

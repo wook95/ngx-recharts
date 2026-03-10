@@ -189,8 +189,10 @@ export class FunnelComponent implements OnDestroy {
       const upperWidth = (value / maxValue) * plotWidth;
       const lowerWidth = (nextValue / maxValue) * plotWidth;
 
-      // Center-align: x is offset so the trapezoid is centered in the plot area
-      const x = (plotWidth - lowerWidth) / 2;
+      // Center the upper edge in the plot area.
+      // The Trapezoid component centers the lower edge beneath the upper edge,
+      // so we only need to center-position x based on upperWidth.
+      const x = (plotWidth - upperWidth) / 2;
       const y = index * segmentHeight;
 
       // Per-cell fill override

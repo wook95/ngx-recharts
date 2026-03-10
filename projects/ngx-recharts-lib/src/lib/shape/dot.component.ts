@@ -11,18 +11,20 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:circle
-      [class]="className()"
-      [attr.cx]="cx()"
-      [attr.cy]="cy()"
-      [attr.r]="r()"
-      [attr.fill]="fill()"
-      [attr.stroke]="stroke()"
-      [attr.stroke-width]="strokeWidth()"
-      [style]="animationStyle()"
-      (click)="dotClick.emit($event)"
-      (mouseenter)="dotMouseEnter.emit($event)"
-      (mouseleave)="dotMouseLeave.emit($event)" />
+    @if (shouldRender()) {
+      <svg:circle
+        [class]="className()"
+        [attr.cx]="cx()"
+        [attr.cy]="cy()"
+        [attr.r]="r()"
+        [attr.fill]="fill()"
+        [attr.stroke]="stroke()"
+        [attr.stroke-width]="strokeWidth()"
+        [style]="animationStyle()"
+        (click)="dotClick.emit($event)"
+        (mouseenter)="dotMouseEnter.emit($event)"
+        (mouseleave)="dotMouseLeave.emit($event)" />
+    }
   `,
 })
 export class DotComponent {
@@ -47,6 +49,17 @@ export class DotComponent {
     const duration = `${this.animationDuration()}ms`;
     const easing = this.animationEasing();
     return { transition: `all ${duration} ${easing} ${delay}` };
+  });
+
+  /**
+   * Null guard: skip rendering when cx, cy, or r are not valid numbers.
+   * Matches recharts Dot behaviour.
+   */
+  shouldRender = computed(() => {
+    const cxVal = this.cx();
+    const cyVal = this.cy();
+    const rVal = this.r();
+    return Number.isFinite(cxVal) && Number.isFinite(cyVal) && Number.isFinite(rVal) && rVal > 0;
   });
 
   dotClick = output<MouseEvent>();

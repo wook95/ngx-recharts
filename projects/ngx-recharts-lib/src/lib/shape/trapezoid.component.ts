@@ -10,13 +10,15 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:path
-      [attr.d]="pathData()"
-      [attr.fill]="fill()"
-      [attr.stroke]="stroke()"
-      [attr.stroke-width]="strokeWidth()"
-      [class]="className()"
-      [style]="animationStyle()" />
+    @if (shouldRender()) {
+      <svg:path
+        [attr.d]="pathData()"
+        [attr.fill]="fill()"
+        [attr.stroke]="stroke()"
+        [attr.stroke-width]="strokeWidth()"
+        [class]="className()"
+        [style]="animationStyle()" />
+    }
   `,
 })
 export class TrapezoidComponent {
@@ -44,29 +46,45 @@ export class TrapezoidComponent {
     return { transition: `all ${duration} ${easing} ${delay}` };
   });
 
+  /**
+   * Whether the component should render. Returns false for invalid inputs.
+   */
+  shouldRender = computed(() => {
+    const h = this.height();
+    return Number.isFinite(h) && h > 0;
+  });
+
+  /**
+   * Recharts Trapezoid: top-aligned, starting at (x, y).
+   *
+   * The upper edge spans from (x, y) to (x + upperWidth, y).
+   * The lower edge is centered beneath the upper edge:
+   *   from (x + (upperWidth - lowerWidth) / 2, y + height)
+   *   to   (x + (upperWidth + lowerWidth) / 2, y + height)
+   *
+   * This matches how recharts draws trapezoids in FunnelChart.
+   */
   pathData = computed(() => {
+    if (!this.shouldRender()) return '';
+
     const x = this.x();
     const y = this.y();
     const upperWidth = this.upperWidth();
     const lowerWidth = this.lowerWidth();
     const height = this.height();
 
-    // Calculate vertices for a center-aligned trapezoid
-    // Top edge at y, bottom edge at y + height
-    // Trapezoid is centered horizontally based on lowerWidth
-    const topLeftX = x + (lowerWidth - upperWidth) / 2;
+    // Top edge: starts at (x, y), width = upperWidth
+    const topLeftX = x;
     const topLeftY = y;
-
-    const topRightX = x + (lowerWidth + upperWidth) / 2;
+    const topRightX = x + upperWidth;
     const topRightY = y;
 
-    const bottomRightX = x + lowerWidth;
+    // Bottom edge: centered under the upper edge
+    const bottomRightX = x + (upperWidth + lowerWidth) / 2;
     const bottomRightY = y + height;
-
-    const bottomLeftX = x;
+    const bottomLeftX = x + (upperWidth - lowerWidth) / 2;
     const bottomLeftY = y + height;
 
-    // Path: M topLeft L topRight L bottomRight L bottomLeft Z
     return [
       `M ${topLeftX} ${topLeftY}`,
       `L ${topRightX} ${topRightY}`,
