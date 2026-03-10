@@ -17,6 +17,7 @@ import { CHART_TOOLTIP_SERVICE } from '../core/chart-context.token';
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { createChartDimensions } from '../shared/chart-dimensions';
 import { ChartDataService } from '../services/chart-data.service';
+import { ClipPathService } from '../services/clip-path.service';
 
 export interface LinePoint {
   x: number;
@@ -29,6 +30,9 @@ export interface LinePoint {
   selector: 'svg:g[ngx-line]',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[attr.clip-path]': 'clipPathService?.shouldClip() ? clipPathService.clipPathUrl() : null',
+  },
   template: `
     @if (!hide() && finalPoints().length > 0) {
       <!-- Line path -->
@@ -88,6 +92,7 @@ export class LineComponent implements OnDestroy {
   private tooltipService = inject(CHART_TOOLTIP_SERVICE, { optional: true });
   private registryService = inject(GraphicalItemRegistryService, { optional: true });
   private chartDataService = inject(ChartDataService, { optional: true });
+  clipPathService = inject(ClipPathService, { optional: true });
 
   private static nextId = 0;
   private readonly itemId = `line-${LineComponent.nextId++}`;

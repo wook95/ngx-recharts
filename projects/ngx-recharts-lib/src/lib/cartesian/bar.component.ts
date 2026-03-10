@@ -15,6 +15,7 @@ import { ResponsiveContainerService } from '../services/responsive-container.ser
 import { GraphicalItemRegistryService } from '../services/graphical-item-registry.service';
 import { createChartDimensions } from '../shared/chart-dimensions';
 import { ChartDataService } from '../services/chart-data.service';
+import { ClipPathService } from '../services/clip-path.service';
 import { stack as d3Stack } from 'd3-shape';
 import { getD3StackOffset } from '../shared/d3-helpers';
 
@@ -31,6 +32,9 @@ export interface BarRect {
   selector: 'svg:g[ngx-bar]',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[attr.clip-path]': 'clipPathService?.shouldClip() ? clipPathService.clipPathUrl() : null',
+  },
   template: `
     @if (!hide() && bars().length > 0) {
       @for (bar of bars(); track $index) {
@@ -77,6 +81,7 @@ export class BarComponent implements OnDestroy {
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
   private registryService = inject(GraphicalItemRegistryService, { optional: true });
   private chartDataService = inject(ChartDataService, { optional: true });
+  clipPathService = inject(ClipPathService, { optional: true });
 
   private static nextId = 0;
   private readonly itemId = `bar-${BarComponent.nextId++}`;

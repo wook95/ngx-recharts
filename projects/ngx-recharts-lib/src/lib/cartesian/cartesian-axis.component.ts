@@ -160,6 +160,7 @@ export class CartesianAxisComponent implements OnDestroy {
         range: [0, 0],
         ticks: this.ticks?.() ?? [],
         dataKey: this.dataKey(),
+        allowDataOverflow: this.allowDataOverflow(),
       });
     });
   }

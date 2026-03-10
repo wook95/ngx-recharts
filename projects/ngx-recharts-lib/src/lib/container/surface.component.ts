@@ -11,6 +11,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChartLayoutService } from '../services/chart-layout.service';
+import { ClipPathService } from '../services/clip-path.service';
+import { ResponsiveContainerService } from '../services/responsive-container.service';
 
 @Component({
   selector: 'ngx-recharts-surface',
@@ -33,6 +35,18 @@ import { ChartLayoutService } from '../services/chart-layout.service';
       @if (desc()) {
         <svg:desc>{{ desc() }}</svg:desc>
       }
+      @if (clipPathService?.shouldClip()) {
+        <svg:defs>
+          <svg:clipPath [attr.id]="clipPathService!.clipPathId">
+            <svg:rect
+              [attr.x]="clipX()"
+              [attr.y]="clipY()"
+              [attr.width]="clipWidth()"
+              [attr.height]="clipHeight()"
+            />
+          </svg:clipPath>
+        </svg:defs>
+      }
       <ng-content></ng-content>
     </svg>
   `,
@@ -45,6 +59,8 @@ import { ChartLayoutService } from '../services/chart-layout.service';
 })
 export class SurfaceComponent {
   private layoutService = inject(ChartLayoutService, { optional: true });
+  clipPathService = inject(ClipPathService, { optional: true });
+  private responsiveService = inject(ResponsiveContainerService, { optional: true });
 
   // Inputs using new signal-based inputs
   width = input<number>(0);
@@ -59,6 +75,12 @@ export class SurfaceComponent {
 
   // Computed viewBox — uses input override if provided, else auto-computed
   resolvedViewBox = computed(() => this.viewBox() ?? `0 0 ${this.width()} ${this.height()}`);
+
+  // Clip rect coordinates (absolute SVG coordinates)
+  clipX = computed(() => this.responsiveService?.totalOffset().left ?? 0);
+  clipY = computed(() => this.responsiveService?.totalOffset().top ?? 0);
+  clipWidth = computed(() => this.responsiveService?.plotWidth() ?? this.width());
+  clipHeight = computed(() => this.responsiveService?.plotHeight() ?? this.height());
 
   // Output events
   dimensionsChange = output<{ width: number; height: number }>();
