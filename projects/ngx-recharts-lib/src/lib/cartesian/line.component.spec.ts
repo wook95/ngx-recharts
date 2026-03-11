@@ -172,4 +172,110 @@ describe('LineComponent', () => {
       expect(fixture.componentInstance.getActivePoint()).toBeNull();
     });
   });
+
+  describe('stroke and strokeWidth inputs', () => {
+    it('should default stroke to #3182bd and strokeWidth to 1', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      expect(comp.stroke()).toBe('#3182bd');
+      expect(comp.strokeWidth()).toBe(1);
+    });
+
+    it('should accept custom stroke and strokeWidth', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('stroke', '#ff6600');
+      fixture.componentRef.setInput('strokeWidth', 3);
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      expect(comp.stroke()).toBe('#ff6600');
+      expect(comp.strokeWidth()).toBe(3);
+    });
+  });
+
+  describe('hide input', () => {
+    it('should default hide to false', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.hide()).toBe(false);
+    });
+
+    it('should respect hide input when set to true', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('hide', true);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.hide()).toBe(true);
+    });
+  });
+
+  describe('dot input', () => {
+    it('should default dot to true (dots shown)', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.shouldShowDots()).toBe(true);
+    });
+
+    it('should hide dots when dot is false', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('dot', false);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.shouldShowDots()).toBe(false);
+    });
+  });
+
+  describe('type input (curve type)', () => {
+    it('should default type to linear', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.type()).toBe('linear');
+    });
+
+    it('should accept monotone type', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('type', 'monotone');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.type()).toBe('monotone');
+    });
+
+    it('should accept step type', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('type', 'step');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.type()).toBe('step');
+    });
+  });
+
+  describe('connectNulls input', () => {
+    it('should default connectNulls to false', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.connectNulls()).toBe(false);
+    });
+
+    it('should include all numeric points when connectNulls is true', () => {
+      const fixture = TestBed.createComponent(LineComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('data', [
+        { name: 'Jan', value: 100 },
+        { name: 'Feb', value: 200 },
+        { name: 'Mar', value: 150 },
+      ]);
+      fixture.componentRef.setInput('chartWidth', 400);
+      fixture.componentRef.setInput('chartHeight', 300);
+      fixture.componentRef.setInput('connectNulls', true);
+      fixture.detectChanges();
+      const points = fixture.componentInstance.finalPoints();
+      expect(points.length).toBe(3);
+    });
+  });
 });

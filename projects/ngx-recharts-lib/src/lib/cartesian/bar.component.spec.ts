@@ -115,4 +115,97 @@ describe('BarComponent', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.resolvedRadius()).toBe(6);
   });
+
+  describe('fill and stroke inputs', () => {
+    it('should default fill to #8884d8 and stroke to none', () => {
+      const fixture = TestBed.createComponent(BarComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      expect(comp.fill()).toBe('#8884d8');
+      expect(comp.stroke()).toBe('none');
+    });
+
+    it('should accept custom fill and stroke values', () => {
+      const fixture = TestBed.createComponent(BarComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('fill', '#ff0000');
+      fixture.componentRef.setInput('stroke', '#000000');
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      expect(comp.fill()).toBe('#ff0000');
+      expect(comp.stroke()).toBe('#000000');
+    });
+  });
+
+  describe('hide input', () => {
+    it('should default hide to false', () => {
+      const fixture = TestBed.createComponent(BarComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.hide()).toBe(false);
+    });
+
+    it('should respect hide input when set to true', () => {
+      const fixture = TestBed.createComponent(BarComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('hide', true);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.hide()).toBe(true);
+    });
+  });
+
+  describe('barMouseLeave event emission', () => {
+    it('should emit ChartMouseEvent on handleBarMouseLeave', () => {
+      const fixture = TestBed.createComponent(BarComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+
+      const emitted: ChartMouseEvent[] = [];
+      comp.barMouseLeave.subscribe((e: ChartMouseEvent) => emitted.push(e));
+
+      const payload = { name: 'Mar', value: 150 };
+      comp.handleBarMouseLeave(new MouseEvent('mouseleave'), payload, 2);
+
+      expect(emitted.length).toBe(1);
+      expect(emitted[0].dataKey).toBe('value');
+      expect(emitted[0].index).toBe(2);
+      expect(emitted[0].value).toBe(150);
+    });
+  });
+
+  describe('stackId input', () => {
+    it('should default stackId to undefined', () => {
+      const fixture = TestBed.createComponent(BarComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.stackId()).toBeUndefined();
+    });
+
+    it('should accept a stackId string', () => {
+      const fixture = TestBed.createComponent(BarComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('stackId', 'stack-a');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.stackId()).toBe('stack-a');
+    });
+  });
+
+  describe('barSize input', () => {
+    it('should default barSize to undefined', () => {
+      const fixture = TestBed.createComponent(BarComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.barSize()).toBeUndefined();
+    });
+
+    it('should accept a numeric barSize', () => {
+      const fixture = TestBed.createComponent(BarComponent);
+      fixture.componentRef.setInput('dataKey', 'value');
+      fixture.componentRef.setInput('barSize', 20);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.barSize()).toBe(20);
+    });
+  });
 });
