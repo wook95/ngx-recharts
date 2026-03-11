@@ -131,6 +131,16 @@ describe('AxisRegistryService', () => {
     });
   });
 
+  describe('optional fields', () => {
+    it('should preserve optional dataKey and orientation', () => {
+      const axis = makeAxis({ type: 'x', axisId: '0', dataKey: 'time', orientation: 'bottom' });
+      service.registerAxis(axis);
+      const retrieved = service.getXAxis();
+      expect(retrieved?.dataKey).toBe('time');
+      expect(retrieved?.orientation).toBe('bottom');
+    });
+  });
+
   describe('overwrite behavior', () => {
     it('should overwrite previous entry when re-registering same type-axisId', () => {
       service.registerAxis(makeAxis({ type: 'x', axisId: '0', domain: [0, 100] }));

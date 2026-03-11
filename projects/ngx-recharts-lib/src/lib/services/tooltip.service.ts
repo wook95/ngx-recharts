@@ -8,7 +8,7 @@ export class TooltipService {
   private _payload = signal<TooltipPayload[]>([]);
   private _label = signal('');
   private _coordinate = signal({ x: 0, y: 0 });
-  private _targetCoordinate = signal({ x: 0, y: 0 });
+
 
   // Public readonly signals
   readonly active = this._active.asReadonly();
@@ -25,9 +25,7 @@ export class TooltipService {
     this._label.set(label || '');
     this._active.set(true);
     
-    // Immediate position update (recharts style)
     this._coordinate.set(coordinate);
-    this._targetCoordinate.set(coordinate);
   }
 
   hideTooltip() {
