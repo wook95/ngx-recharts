@@ -15,6 +15,7 @@ import { GraphicalItemRegistryService } from '../services/graphical-item-registr
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { ScaleService } from '../services/scale.service';
 import { createChartDimensions } from '../shared/chart-dimensions';
+import { ClipPathService } from '../services/clip-path.service';
 import { SymbolsComponent, SymbolType } from '../shape/symbols.component';
 import { CurveComponent, CurveType } from '../shape/curve.component';
 
@@ -30,6 +31,9 @@ export interface ScatterPoint {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SymbolsComponent, CurveComponent],
+  host: {
+    '[attr.clip-path]': 'clipPathService?.shouldClip() ? clipPathService.clipPathUrl() : null',
+  },
   template: `
     @if (!hide()) {
       @if (line()) {
@@ -66,6 +70,7 @@ export class ScatterComponent implements OnDestroy {
   private registryService = inject(GraphicalItemRegistryService, { optional: true });
   private responsiveService = inject(ResponsiveContainerService, { optional: true });
   private scaleService = inject(ScaleService);
+  clipPathService = inject(ClipPathService, { optional: true });
 
   private static nextId = 0;
   private readonly itemId = `scatter-${ScatterComponent.nextId++}`;

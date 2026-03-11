@@ -21,6 +21,7 @@ import { ChartDataService, YDomainMode } from '../services/chart-data.service';
 import { CartesianLabelContextService } from '../context/label-context.service';
 import { CartesianLabelListContextService } from '../context/label-list-context.service';
 import { AxisRegistryService } from '../services/axis-registry.service';
+import { ClipPathService } from '../services/clip-path.service';
 
 
 @Component({
@@ -36,6 +37,7 @@ import { AxisRegistryService } from '../services/axis-registry.service';
     CartesianLabelContextService,
     CartesianLabelListContextService,
     AxisRegistryService,
+    ClipPathService,
     {
       provide: CHART_TOOLTIP_SERVICE,
       useExisting: TooltipService,

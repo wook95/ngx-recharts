@@ -17,6 +17,7 @@ export * from './lib/services/axis-domain.service';
 export * from './lib/services/axis-scale.service';
 export * from './lib/services/chart-data.service';
 export * from './lib/services/responsive-container.service';
+export * from './lib/services/clip-path.service';
 
 // Chart Components
 export * from './lib/chart/line-chart.component';

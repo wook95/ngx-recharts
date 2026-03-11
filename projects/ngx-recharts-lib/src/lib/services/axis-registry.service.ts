@@ -9,6 +9,7 @@ export interface AxisRegistration {
   ticks: any[];
   dataKey?: string;
   orientation?: string;
+  allowDataOverflow?: boolean;
 }
 
 @Injectable()
