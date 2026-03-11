@@ -4,7 +4,9 @@ import {
   computed,
   inject,
   input,
+  output,
 } from '@angular/core';
+import { ChartMouseEvent } from '../core/event-types';
 import { AxisRegistryService } from '../services/axis-registry.service';
 import { ResponsiveContainerService } from '../services/responsive-container.service';
 import { RectangleComponent } from '../shape/rectangle.component';
@@ -17,27 +19,38 @@ import { RectangleComponent } from '../shape/rectangle.component';
   template: `
     @if (rectCoords(); as coords) {
       <svg:g
-        ngx-rectangle
-        [x]="coords.x"
-        [y]="coords.y"
-        [width]="coords.width"
-        [height]="coords.height"
-        [fill]="fill()"
-        [stroke]="stroke()"
-        [strokeWidth]="1"
-        [attr.fill-opacity]="fillOpacity()"
-        [attr.stroke-opacity]="strokeOpacity()"
-      />
-      @if (label()) {
-        <svg:text
-          class="recharts-label"
-          [attr.x]="coords.x + coords.width / 2"
-          [attr.y]="coords.y + coords.height / 2"
-          text-anchor="middle"
-          dominant-baseline="central"
-          fill="#666"
-        >{{ label() }}</svg:text>
-      }
+        (click)="handleClick($event)"
+        (mousedown)="handleMouseDown($event)"
+        (mouseup)="handleMouseUp($event)"
+        (mousemove)="handleMouseMove($event)"
+        (mouseover)="handleMouseOver($event)"
+        (mouseout)="handleMouseOut($event)"
+        (mouseenter)="handleMouseEnter($event)"
+        (mouseleave)="handleMouseLeave($event)"
+      >
+        <svg:g
+          ngx-rectangle
+          [x]="coords.x"
+          [y]="coords.y"
+          [width]="coords.width"
+          [height]="coords.height"
+          [fill]="fill()"
+          [stroke]="stroke()"
+          [strokeWidth]="1"
+          [attr.fill-opacity]="fillOpacity()"
+          [attr.stroke-opacity]="strokeOpacity()"
+        />
+        @if (label()) {
+          <svg:text
+            class="recharts-label"
+            [attr.x]="coords.x + coords.width / 2"
+            [attr.y]="coords.y + coords.height / 2"
+            text-anchor="middle"
+            dominant-baseline="central"
+            fill="#666"
+          >{{ label() }}</svg:text>
+        }
+      </svg:g>
     }
   `,
 })
@@ -57,6 +70,33 @@ export class ReferenceAreaComponent {
   strokeOpacity = input<number>(1);
   label = input<string | undefined>(undefined);
   ifOverflow = input<string>('discard');
+
+  // Event outputs
+  refAreaClick = output<ChartMouseEvent>();
+  refAreaMouseDown = output<ChartMouseEvent>();
+  refAreaMouseUp = output<ChartMouseEvent>();
+  refAreaMouseMove = output<ChartMouseEvent>();
+  refAreaMouseOver = output<ChartMouseEvent>();
+  refAreaMouseOut = output<ChartMouseEvent>();
+  refAreaMouseEnter = output<ChartMouseEvent>();
+  refAreaMouseLeave = output<ChartMouseEvent>();
+
+  private emitEvent(event: MouseEvent): ChartMouseEvent {
+    return {
+      nativeEvent: event,
+      payload: { x1: this.x1(), x2: this.x2(), y1: this.y1(), y2: this.y2() },
+      index: 0,
+    };
+  }
+
+  handleClick(event: MouseEvent) { this.refAreaClick.emit(this.emitEvent(event)); }
+  handleMouseDown(event: MouseEvent) { this.refAreaMouseDown.emit(this.emitEvent(event)); }
+  handleMouseUp(event: MouseEvent) { this.refAreaMouseUp.emit(this.emitEvent(event)); }
+  handleMouseMove(event: MouseEvent) { this.refAreaMouseMove.emit(this.emitEvent(event)); }
+  handleMouseOver(event: MouseEvent) { this.refAreaMouseOver.emit(this.emitEvent(event)); }
+  handleMouseOut(event: MouseEvent) { this.refAreaMouseOut.emit(this.emitEvent(event)); }
+  handleMouseEnter(event: MouseEvent) { this.refAreaMouseEnter.emit(this.emitEvent(event)); }
+  handleMouseLeave(event: MouseEvent) { this.refAreaMouseLeave.emit(this.emitEvent(event)); }
 
   private plotWidth = computed(() => this.responsiveService?.plotWidth() ?? 400);
   private plotHeight = computed(() => this.responsiveService?.plotHeight() ?? 300);

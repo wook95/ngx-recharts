@@ -54,6 +54,11 @@ export interface AreaPoint {
         [attr.stroke]="stroke()"
         [attr.stroke-width]="strokeWidth()"
         (click)="handleAreaClick($event)"
+        (mousedown)="handleAreaMouseDown($event)"
+        (mouseup)="handleAreaMouseUp($event)"
+        (mousemove)="handleAreaMouseMove($event)"
+        (mouseover)="handleAreaMouseOver($event)"
+        (mouseout)="handleAreaMouseOut($event)"
         (mouseenter)="handleAreaMouseEnter($event)"
         (mouseleave)="handleAreaMouseLeave($event)" />
       
@@ -149,6 +154,11 @@ export class AreaComponent implements OnDestroy {
   categoryKey = input<string>('name');
 
   areaClick = output<ChartMouseEvent>();
+  areaMouseDown = output<ChartMouseEvent>();
+  areaMouseUp = output<ChartMouseEvent>();
+  areaMouseMove = output<ChartMouseEvent>();
+  areaMouseOver = output<ChartMouseEvent>();
+  areaMouseOut = output<ChartMouseEvent>();
   areaMouseEnter = output<ChartMouseEvent>();
   areaMouseLeave = output<ChartMouseEvent>();
 
@@ -388,6 +398,51 @@ export class AreaComponent implements OnDestroy {
 
   handleAreaMouseEnter(event: MouseEvent) {
     this.areaMouseEnter.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleAreaMouseDown(event: MouseEvent) {
+    this.areaMouseDown.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleAreaMouseUp(event: MouseEvent) {
+    this.areaMouseUp.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleAreaMouseMove(event: MouseEvent) {
+    this.areaMouseMove.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleAreaMouseOver(event: MouseEvent) {
+    this.areaMouseOver.emit({
+      nativeEvent: event,
+      dataKey: this.dataKey() as string,
+      payload: this.resolvedData(),
+      index: 0,
+    });
+  }
+
+  handleAreaMouseOut(event: MouseEvent) {
+    this.areaMouseOut.emit({
       nativeEvent: event,
       dataKey: this.dataKey() as string,
       payload: this.resolvedData(),

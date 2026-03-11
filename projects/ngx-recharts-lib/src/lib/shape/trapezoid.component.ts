@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   input,
+  output,
 } from '@angular/core';
 
 @Component({
@@ -17,7 +18,15 @@ import {
         [attr.stroke]="stroke()"
         [attr.stroke-width]="strokeWidth()"
         [class]="className()"
-        [style]="animationStyle()" />
+        [style]="animationStyle()"
+        (click)="trapezoidClick.emit($event)"
+        (mousedown)="trapezoidMouseDown.emit($event)"
+        (mouseup)="trapezoidMouseUp.emit($event)"
+        (mousemove)="trapezoidMouseMove.emit($event)"
+        (mouseover)="trapezoidMouseOver.emit($event)"
+        (mouseout)="trapezoidMouseOut.emit($event)"
+        (mouseenter)="trapezoidMouseEnter.emit($event)"
+        (mouseleave)="trapezoidMouseLeave.emit($event)" />
     }
   `,
 })
@@ -31,6 +40,15 @@ export class TrapezoidComponent {
   stroke = input<string>('none');
   strokeWidth = input<number>(1);
   className = input<string>('');
+
+  trapezoidClick = output<MouseEvent>();
+  trapezoidMouseDown = output<MouseEvent>();
+  trapezoidMouseUp = output<MouseEvent>();
+  trapezoidMouseMove = output<MouseEvent>();
+  trapezoidMouseOver = output<MouseEvent>();
+  trapezoidMouseOut = output<MouseEvent>();
+  trapezoidMouseEnter = output<MouseEvent>();
+  trapezoidMouseLeave = output<MouseEvent>();
 
   // Animation inputs
   isAnimationActive = input<boolean>(true);
