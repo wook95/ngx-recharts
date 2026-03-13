@@ -88,7 +88,7 @@ export class SunburstChartComponent {
 
     const root = hierarchy(data)
       .sum((d: any) => d[dataKey] ?? 0)
-      .sort((a, b) => (b.value || 0) - (a.value || 0));
+      .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
 
     partition()(root);
 
@@ -96,8 +96,8 @@ export class SunburstChartComponent {
     const yScale = scaleSqrt().domain([0, 1]).range([innerRadius, outerRadius]);
 
     return root.descendants()
-      .filter(d => d.depth > 0)
-      .map((d, i) => ({
+      .filter((d: any) => d.depth > 0)
+      .map((d: any, i: number) => ({
         startAngle: xScale((d as any).x0),
         endAngle: xScale((d as any).x1),
         innerRadius: yScale((d as any).y0),
