@@ -96,7 +96,7 @@ export class TreemapComponent {
 
     treemapLayout(root);
 
-    return root.leaves().map((leaf: any, i) => ({
+    return root.leaves().map((leaf: any, i: number) => ({
       x: leaf.x0,
       y: leaf.y0,
       width: leaf.x1 - leaf.x0,

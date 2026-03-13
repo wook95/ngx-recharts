@@ -116,7 +116,7 @@ export class SankeyComponent {
 
   sankeyNodes = computed<SankeyNodeProcessed[]>(() => {
     const key = this.nameKey();
-    return this.layout().nodes.map(n => ({
+    return this.layout().nodes.map((n: any) => ({
       ...n,
       name: (n as unknown as Record<string, unknown>)[key] as string,
     })) as SankeyNodeProcessed[];
@@ -124,7 +124,7 @@ export class SankeyComponent {
 
   sankeyLinks = computed<SankeyLinkProcessed[]>(() => {
     const pathGen = sankeyLinkHorizontal();
-    return this.layout().links.map(link => ({
+    return this.layout().links.map((link: any) => ({
       ...link,
       path: pathGen(link) ?? '',
       width: Math.max(1, (link as any).width ?? 1),
